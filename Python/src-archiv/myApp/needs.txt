@@ -1,0 +1,7 @@
+ipython
+numpy
+pip
+pyglet
+PySide
+setuptools
+vispy

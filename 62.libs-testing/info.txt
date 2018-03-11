@@ -1,0 +1,71 @@
+
+Статическая линковка приложения с библиотекой "libstdc++":
+
+ gcc -Wall -x c++ main.cpp -lstdc++ --std=c++17 -static -O0 -o app -s -march=x86-64
+
+размер файла получается всего 857.6К. Если не указать ключ удаления таблицы
+символов (-s), то размер файла составит 2970.9K
+
+Статическая сборка
+==================
+
+Сборка статической библиотеки:
+  gcc -c -o line.o --std=c++17 -Wall line.cpp -lstdc++ -static -O0 -march=x86-64
+  gcc -c -o row.o  --std=c++17 -Wall row.cpp  -lstdc++ -static -O0 -march=x86-64
+  ar -crs libtst.a row.o line.o
+
+Статическая компиляция:
+  gcc --std=c++17 -Wall main.cpp -ltst -L. -lstdc++ -static -O0 -march=x86-64 -s -o app
+
+В результате получим
+--------------------
+"автономный" (не требущий для работы наличия тестовой библиотеки "libtst" и
+mingw C++ библиотеки) файл:
+
+>ldd.exe app.exe
+    ntdll.dll => /c/Windows/SYSTEM32/ntdll.dll (0x7ffe0a3c0000)
+    KERNEL32.DLL => /c/Windows/system32/KERNEL32.DLL (0x7ffe09e50000)
+    KERNELBASE.dll => /c/Windows/system32/KERNELBASE.dll (0x7ffe07930000)
+    msvcrt.dll => /c/Windows/system32/msvcrt.dll (0x7ffe09f90000)
+
+Сборка динамической библиотеки:
+===============================
+
+  gcc --std=c++17 -Wall -fPIC -O0 -march=x86-64 -c line.cpp
+  gcc --std=c++17 -Wall -fPIC -O0 -march=x86-64 -c row.cpp
+  gcc -shared row.o line.o -lstdc++ -Wl,-soname,libapp1.dll -o libapp1.dll
+
+В результате получим libapp1.dll, с кучей зависимостей:
+-----------------------------------------------------
+
+>ldd.exe libapp1.dll
+  ntdll.dll => /c/Windows/SYSTEM32/ntdll.dll (0x7ffe0a3c0000)
+  KERNEL32.DLL => /c/Windows/system32/KERNEL32.DLL (0x7ffe09e50000)
+  KERNELBASE.dll => /c/Windows/system32/KERNELBASE.dll (0x7ffe07930000)
+  msvcrt.dll => /c/Windows/system32/msvcrt.dll (0x7ffe09f90000)
+  libstdc++-6.dll => /mingw64/bin/libstdc++-6.dll (0x6fc40000)
+  libwinpthread-1.dll => /mingw64/bin/libwinpthread-1.dll (0x64940000)
+  USER32.dll => /c/Windows/system32/USER32.dll (0x7ffe08f90000)
+  libgcc_s_seh-1.dll => /mingw64/bin/libgcc_s_seh-1.dll (0x61440000)
+  GDI32.dll => /c/Windows/system32/GDI32.dll (0x7ffe09450000)
+  IMM32.DLL => /c/Windows/system32/IMM32.DLL (0x7ffe099e0000)
+  MSCTF.dll => /c/Windows/system32/MSCTF.dll (0x7ffe0a250000)
+
+Для компиляции исполняемого файла приложения в этом случае требуется libstdc++:
+
+  gcc --std=c++17 -Wall main.cpp -lapp1 -L. -lstdc++ -O0 -march=x86-64 -o app
+
+Если библиотеку собрать статически с "libstdc++":
+
+  gcc -shared row.o line.o -static -lstdc++ -Wl,-soname,libapp1.dll -o libapp1.dll -s
+
+То получим:
+>ldd.exe libapp1.dll
+        ntdll.dll => /c/Windows/SYSTEM32/ntdll.dll (0x7ffe0a3c0000)
+        KERNEL32.DLL => /c/Windows/system32/KERNEL32.DLL (0x7ffe09e50000)
+        KERNELBASE.dll => /c/Windows/system32/KERNELBASE.dll (0x7ffe07930000)
+        msvcrt.dll => /c/Windows/system32/msvcrt.dll (0x7ffe09f90000)
+
+И для компиляции приложения не надо будет указывать библиотеку "libstdc++":
+
+  gcc --std=c++17 -Wall main.cpp -lapp1 -Lapplibs -O0 -march=x86-64 -o appst -s

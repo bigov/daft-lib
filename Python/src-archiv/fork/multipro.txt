@@ -1,0 +1,35 @@
+
+Обмен данными в мультипроцессном приложении:
+    http://pymotw.com/2/multiprocessing/communication.html
+
+Найдено на groups.google.com
+
+--------------------------
+import pyglet
+import multiprocessing
+b = pyglet.graphics.Batch()
+
+def inprocess():
+    w = pyglet.window.Window()
+    pyglet.app.run()
+
+p = multiprocessing.Process(target=inprocess)
+p.start()
+p.join()
+---------------------------
+
+или так:
+
+---------------------------
+import multiprocessing
+
+def inprocess():
+    import pyglet
+    b = pyglet.graphics.Batch()
+
+    w = pyglet.window.Window()
+    pyglet.app.run()
+
+p = multiprocessing.Process(target=inprocess)
+p.start()
+p.join()

@@ -1,0 +1,53 @@
+
+    Создание списка всех возможных комбинаций нескольких чисел:
+===============================================================
+
+>>> import itertools
+>>> r = itertools.permutations((1,2,3))
+>>> print(tuple(r))
+>>> ((1, 2, 3), (1, 3, 2), (2, 1, 3), (2, 3, 1), (3, 1, 2), (3, 2, 1))
+
+!Важно!
+Объект "r" - это ГЕНЕРАТОР. То есть повторный вызов вернет пустое значение:
+>>>  print(tuple(r))
+>>>  ()
+
+
+    YIELD
+===============================================================
+
+>>> def myGen():
+>>>     for i in range(4):
+>>>         yield 2**i
+
+>>> a = myGen()
+>>> a
+>>> <generator object myGen at 0x7fc47a638750>
+>>> list(a)
+>>> [1, 2, 4, 8]
+>>> list(a)
+>>> []
+>>> a = myGen()
+>>> list(a)
+>>> [1, 2, 4, 8]
+
+
+Генератор словаря
+===============================================================
+
+from random import randrange
+from itertools import product
+
+def p_gen(side_len):
+    for p in product(range(side_len), range(side_len)):
+        x, z = p
+        y = randrange(2)
+        yield ((x, y, z), None)
+
+d = dict(p_gen(3))
+
+print(d)
+
+---> {(0, 1, 1): None, (1, 0, 2): None, (2, 1, 0): None,
+      (0, 0, 2): None, (2, 1, 2): None, (1, 1, 0): None,
+      (1, 1, 1): None, (2, 1, 1): None, (0, 1, 0): None }

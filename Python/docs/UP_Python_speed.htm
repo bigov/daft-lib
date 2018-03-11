@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html" lang="ru"><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    
+    <link href="prettify.css" rel="stylesheet">
+	 <title>Повышение производительности Python приложений</title>
+
+
+<style type="text/css">
+body {padding: 1em;}
+.pln{color:#000;}
+.str{color:#080;}
+.kwd{color:#008;}
+.com{color:#800;}
+.typ{color:#606;}
+.lit{color:#066;}
+.pun,.opn,.clo{color:#660;}
+.tag{color:#008;}
+.atn{color:#606;}
+.atv{color:#080;}
+.dec,.var{color:#606;}
+.fun{color:red;}
+pre.prettyprint{
+    padding: 1em;
+    border:1px solid #888;
+    }
+ol.linenums{margin-top:0;margin-bottom:0;}
+li.L0,li.L1,li.L2,li.L3,li.L5,li.L6,li.L7,li.L8{list-style-type:none;}
+li.L1,li.L3,li.L5,li.L7,li.L9{background:#eee;}
+    </style>
+    
+</head>
+
+  <body onload="prettyPrint()">
+
+      <div class="well">
+      
+        <div align="center"><h2>Повышение производительности Python приложений</h2></div>
+        <br>
+        <h5>Russian translation of the <a href="http://wiki.python.org/moin/PythonSpeed/PerformanceTips">Python Speed - Performance tips</a> article, translated by <a href="http://masters.donntu.org/2012/fknt/vlasenko/indexe.htm">Anton Vlasenko</a>	.</h5>
+        <h5>Перевод статьи <a href="http://wiki.python.org/moin/PythonSpeed/PerformanceTips">Python Speed - Performance tips</a></h5>
+        <h5>Автор перевода: <a href="http://masters.donntu.org/2012/fknt/vlasenko/"> Власенко А.П.</a>, магистр ДонНТУ </h5>
+        <br>
+
+      <h4>Эта статья посвящена инструкциям по повышению производительности ваших приложений на Python.</h4>
+      <br>
+      <p>Python существенно изменился с тех пор, как я опубликовал свою 
+первую версию статьи "Быстрый Python" в 1996, а значит некоторые правила
+ могли потерять актуальность. Поэтому я перенес статью в Python wiki, в 
+надежде, что другие помогут мне содержать ее в актуальном состоянии.
+      Всегда проверяйте представленные здесь советы на вашем приложении и
+ на конкретном интерпретаторе Python, который вы собираетесь 
+использовать. Не стоит следовать этим советам вслепую, без проверки, 
+соглашаясь, что один метод быстрее другого. В секции "профилирование" 
+говорится об этом подробно.
+      С тех пор, как была написана оригинальная статья, появились также 
+следующие инструменты: Cython, Pyrex, Psyco, Weave, PyInline, PyPy, 
+которые могут существенно повысить производительность вашего приложения,
+ облегчая процесс преобразования критичного для производительности кода в
+ C или в машинный код.
+      </p>
+
+      <h4>Предисловие: оптимизируйте то, что требует оптимизации</h4>
+      <blockquote class="pull-right">
+          <p><small>Не оптимизируйте программу, если производительность является достаточной.</small></p>
+      </blockquote>
+      <br><br>
+
+      <p>Чтобы узнать, что делает вашу программу медленной, нужно 
+сначала дать приложению выполниться, выдав правильный результат. Если вы
+ решите, что программа выполняется слишком медленно, вы должны 
+профилировать программу, чтобы определить самую медленную её часть. 
+Позаботьтесь о быстром автоматизированном тесте, который должен 
+подтверждать, что будущие оптимизации не сломают вашу программу и не 
+повлияют на правильность ее работы.
+      </p>
+
+      Вкратце:<ol>
+      <li>Сделайте приложение.</li>
+      <li>Проверьте правильность его работы.</li>
+      <li>Профилируйте, если производительность окажется недостаточной.</li>
+      <li>Оптимизируйте.</li>
+      <li>Повторите шаг 2.</li>
+      </ol>
+
+      <p>Некоторое базовые оптимизации относятся к хорошему стилю 
+программирования и должны быть выучены по мере изучения языка. В 
+качестве примера - расчеты значений, которые не изменяются в пределах 
+цикла, должны быть вынесены за пределы цикла.</p>
+
+      <h4>Сортировка</h4>
+      <p>Сортировка списков базовых объектов в Python реализована 
+эффективно. Метод sort() для сортировки списков принимает в качестве 
+дополнительного аргумента функцию, которая может быть использована как 
+признак, используемый во время сортировки. Это достаточно очевидно, но 
+это также можно существенно замедлить ваши сортировки, т.&nbsp;к. эта 
+функция будет вызвана несколько раз. В Python 2.4 рекомендуется 
+использовать аргумент key для встроенной сортировки, который должен быть
+ быстрейшим способом сортировки.
+
+      Следующие руководство Гвидо ван Россума следует использовать 
+только для более ранних версий Python (до 2.4):</p>
+      <p>
+      Альтернативный способ ускорить сортировку — создание списка 
+кортежей, где первый элемент — ключ для сортировки, который правильным 
+образом отсортируется используя стандартную сортировку. Второй элемент 
+кортежа — оригинальный список. Это так называемый Schwartzian Transform,
+ также известный как DecorateSortUndecorate(DSU, идиома языка Perl).
+
+      </p><p>
+      Допустим, у вас есть список кортежей, и вы хотите сортировать его 
+по N полю каждого кортежа. Следующая функция выполнит поставленную 
+задачу:
+      </p>
+      <pre class="prettyprint lang-py"><span class="pln">      </span><span class="kwd">def</span><span class="pln"> sortby</span><span class="pun">(</span><span class="pln">somelist</span><span class="pun">,</span><span class="pln"> n</span><span class="pun">):</span><span class="pln">
+      	nlist </span><span class="pun">=</span><span class="pln"> </span><span class="pun">[(</span><span class="pln">x</span><span class="pun">[</span><span class="pln">n</span><span class="pun">],</span><span class="pln"> x</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">for</span><span class="pln"> x </span><span class="kwd">in</span><span class="pln"> somelist</span><span class="pun">]</span><span class="pln">
+      	nlist</span><span class="pun">.</span><span class="pln">sort</span><span class="pun">()</span><span class="pln">
+      	</span><span class="kwd">return</span><span class="pln"> </span><span class="pun">[</span><span class="pln">val </span><span class="kwd">for</span><span class="pln"> </span><span class="pun">(</span><span class="pln">key</span><span class="pun">,</span><span class="pln"> val</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">in</span><span class="pln"> nlist</span><span class="pun">]</span></pre>
+      <p>Перезапись списка сортированным также может быть достигнута, повторяя функционал встроенной функции сортировки:</p>
+      <pre class="prettyprint lang-py"><span class="pln">      </span><span class="kwd">def</span><span class="pln"> sortby_inplace</span><span class="pun">(</span><span class="pln">somelist</span><span class="pun">,</span><span class="pln"> n</span><span class="pun">):</span><span class="pln">
+      	somelist</span><span class="pun">[:]</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> </span><span class="pun">[(</span><span class="pln">x</span><span class="pun">[</span><span class="pln">n</span><span class="pun">],</span><span class="pln"> x</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">for</span><span class="pln"> x </span><span class="kwd">in</span><span class="pln"> somelist</span><span class="pun">]</span><span class="pln">
+      	somelist</span><span class="pun">.</span><span class="pln">sort</span><span class="pun">()</span><span class="pln">
+      	somelist</span><span class="pun">[:]</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> </span><span class="pun">[</span><span class="pln">val </span><span class="kwd">for</span><span class="pln"> </span><span class="pun">(</span><span class="pln">key</span><span class="pun">,</span><span class="pln"> val</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">in</span><span class="pln"> somelist</span><span class="pun">]</span><span class="pln">
+      	</span><span class="kwd">return</span><span class="pln"> somelist</span></pre>
+      Пример использования:
+      <pre class="prettyprint lang-py"><span class="pln">      </span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> somelist </span><span class="pun">=</span><span class="pln"> </span><span class="pun">[(</span><span class="lit">1</span><span class="pun">,</span><span class="pln"> </span><span class="lit">2</span><span class="pun">,</span><span class="pln"> </span><span class="str">'def'</span><span class="pun">),</span><span class="pln"> </span><span class="pun">(</span><span class="lit">2</span><span class="pun">,</span><span class="pln"> </span><span class="pun">-</span><span class="lit">4</span><span class="pun">,</span><span class="pln"> </span><span class="str">'ghi'</span><span class="pun">),</span><span class="pln"> </span><span class="pun">(</span><span class="lit">3</span><span class="pun">,</span><span class="pln"> </span><span class="lit">6</span><span class="pun">,</span><span class="pln"> </span><span class="str">'abc'</span><span class="pun">)]</span><span class="pln">
+      </span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> somelist</span><span class="pun">.</span><span class="pln">sort</span><span class="pun">()</span><span class="pln">
+      </span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> somelist
+      </span><span class="pun">[(</span><span class="lit">1</span><span class="pun">,</span><span class="pln"> </span><span class="lit">2</span><span class="pun">,</span><span class="pln"> </span><span class="str">'def'</span><span class="pun">),</span><span class="pln"> </span><span class="pun">(</span><span class="lit">2</span><span class="pun">,</span><span class="pln"> </span><span class="pun">-</span><span class="lit">4</span><span class="pun">,</span><span class="pln"> </span><span class="str">'ghi'</span><span class="pun">),</span><span class="pln"> </span><span class="pun">(</span><span class="lit">3</span><span class="pun">,</span><span class="pln"> </span><span class="lit">6</span><span class="pun">,</span><span class="pln"> </span><span class="str">'abc'</span><span class="pun">)]</span><span class="pln">
+      </span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> nlist </span><span class="pun">=</span><span class="pln"> sortby</span><span class="pun">(</span><span class="pln">somelist</span><span class="pun">,</span><span class="pln"> </span><span class="lit">2</span><span class="pun">)</span><span class="pln">
+      </span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> sortby_inplace</span><span class="pun">(</span><span class="pln">somelist</span><span class="pun">,</span><span class="pln"> </span><span class="lit">2</span><span class="pun">)</span><span class="pln">
+      </span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> nlist </span><span class="pun">==</span><span class="pln"> somelist
+      </span><span class="kwd">True</span><span class="pln">
+      </span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> nlist </span><span class="pun">=</span><span class="pln"> sortby</span><span class="pun">(</span><span class="pln">somelist</span><span class="pun">,</span><span class="pln"> </span><span class="lit">1</span><span class="pun">)</span><span class="pln">
+      </span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> sortby_inplace</span><span class="pun">(</span><span class="pln">somelist</span><span class="pun">,</span><span class="pln"> </span><span class="lit">1</span><span class="pun">)</span><span class="pln">
+      </span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> nlist </span><span class="pun">==</span><span class="pln"> somelist
+      </span><span class="kwd">True</span></pre>
+      В Python 2.4 добавлен необязательный параметр key, который существенно упрощает нестандартную сортировку:
+      <pre class="prettyprint lang-py"><span class="pln">      n </span><span class="pun">=</span><span class="pln"> </span><span class="lit">1</span><span class="pln">
+      </span><span class="kwd">import</span><span class="pln"> operator
+      nlist</span><span class="pun">.</span><span class="pln">sort</span><span class="pun">(</span><span class="pln">key</span><span class="pun">=</span><span class="pln">operator</span><span class="pun">.</span><span class="pln">itemgetter</span><span class="pun">(</span><span class="pln">n</span><span class="pun">))</span><span class="pln">
+      </span><span class="com"># Используйте sorted() если вы не хотите</span><span class="pln">
+      </span><span class="com"># перезаписывать существующий список сортированным</span><span class="pln">
+      </span><span class="com"># sortedlist = sorted(nlist, key=operator.itemgetter(n))      </span></pre>
+      <p>Обратите внимание, что оригинальный список не используется для 
+сортировки, только лишь возвращаемый ключ. Это эквивалентно следующей 
+конструкции:
+      </p>
+      <pre class="prettyprint lang-py"><span class="pln">      n </span><span class="pun">=</span><span class="pln"> </span><span class="lit">1</span><span class="pln">
+      nlist </span><span class="pun">=</span><span class="pln"> </span><span class="pun">[(</span><span class="pln">x</span><span class="pun">[</span><span class="pln">n</span><span class="pun">],</span><span class="pln"> i</span><span class="pun">,</span><span class="pln"> x</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">for</span><span class="pln"> </span><span class="pun">(</span><span class="pln">i</span><span class="pun">,</span><span class="pln"> x</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">in</span><span class="pln"> enumerate</span><span class="pun">(</span><span class="pln">nlist</span><span class="pun">)]</span><span class="pln">
+      nlist</span><span class="pun">.</span><span class="pln">sort</span><span class="pun">()</span><span class="pln">
+      nlist </span><span class="pun">=</span><span class="pln"> </span><span class="pun">[</span><span class="pln">val </span><span class="kwd">for</span><span class="pln"> </span><span class="pun">(</span><span class="pln">key</span><span class="pun">,</span><span class="pln"> index</span><span class="pun">,</span><span class="pln"> val</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">in</span><span class="pln"> nlist</span><span class="pun">]</span></pre>
+      <h4>Конкатенация строк</h4>
+      <p>Точность и актуальность данной секции подвержена сомнению из-за
+ последних реализаций Python. В CPython 2.5 конкатенация строк 
+реализована очень быстро, однако это может не относиться к другим 
+реализациям.
+      </p>
+      <p>В Python строки неизменяемые. Этот факт часто вызывает 
+затруднения у новичков. Неизменность строк это одновременно некоторое 
+количество достоинств и недостатков. К достоинствам можно отнести то, 
+что строки могут быть использованы как значения в словарях и отдельные 
+копии строк могут быть связаны с несколькими переменными-ссылками 
+(Python автоматически связывает строки из 1-2 символов). К минусам можно
+ отнести то, что вы не можете просто выполнить запрос “измени все 
+символы 'a' в строке на символы 'б'”. Вместо этого, вы должны создать 
+новую строку с желаемыми свойствами и изменениями. Это постоянное 
+копирование может привести к существенным задержкам в Python 
+приложениях.
+      </p>
+      <p>Избегайте следующего:</p>
+      <pre class="prettyprint lang-py"><span class="com"># Так лучше не делать!</span><span class="pln">
+      s </span><span class="pun">=</span><span class="pln"> </span><span class="str">""</span><span class="pln">
+      </span><span class="kwd">for</span><span class="pln"> substring </span><span class="kwd">in</span><span class="pln"> list</span><span class="pun">:</span><span class="pln">
+      	s </span><span class="pun">+=</span><span class="pln"> substring</span></pre>
+      <p>Вместо этого 
+используйте&nbsp;s&nbsp;=&nbsp;"".join(list)&nbsp;метод. Предыдущий 
+способ очень распространен и является катастрофической ошибкой при 
+создании огромных строк.
+      Также, если вы генерируете строку по кусочкам, избегайте 
+следующего:</p>
+      <pre class="prettyprint lang-py"><span class="com"># Так лучше не делать!</span><span class="pln">
+s </span><span class="pun">=</span><span class="pln"> </span><span class="str">""</span><span class="pln">
+</span><span class="kwd">for</span><span class="pln"> x </span><span class="kwd">in</span><span class="pln"> list</span><span class="pun">:</span><span class="pln">
+	s </span><span class="pun">+=</span><span class="pln"> some_function</span><span class="pun">(</span><span class="pln">x</span><span class="pun">)</span></pre>
+      Используйте
+      <pre class="prettyprint lang-py"><span class="pln">slist </span><span class="pun">=</span><span class="pln"> </span><span class="pun">[</span><span class="pln">some_function</span><span class="pun">(</span><span class="pln">elt</span><span class="pun">)</span><span class="pln"> </span><span class="kwd">for</span><span class="pln"> elt </span><span class="kwd">in</span><span class="pln"> somelist</span><span class="pun">]</span><span class="pln">
+s </span><span class="pun">=</span><span class="pln"> </span><span class="str">""</span><span class="pun">.</span><span class="pln">join</span><span class="pun">(</span><span class="pln">slist</span><span class="pun">)</span><span class="pln"> </span><span class="com"># Рекомендованный способ       </span></pre>
+      От переводчика:
+      <pre class="prettyprint lang-py"><span class="pun">&gt;&gt;&gt;</span><span class="pln"> timeit</span><span class="pun">(</span><span class="str">'s = "".join(l)'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'s=""; l = ["foo", "bar", "spam"]'</span><span class="pun">)</span><span class="pln">
+</span><span class="lit">0.3600640296936035</span><span class="pln">
+</span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> timeit</span><span class="pun">(</span><span class="str">'for sub in l: s+=sub'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'s=""; l = ["foo", "bar", "spam"]'</span><span class="pun">)</span><span class="pln">
+</span><span class="lit">0.857280969619751</span></pre>
+
+      <p>Избегайте:</p>
+      <pre class="prettyprint lang-py"><span class="pln">out </span><span class="pun">=</span><span class="pln"> </span><span class="str">"&lt;html&gt;"</span><span class="pln"> </span><span class="pun">+</span><span class="pln"> head </span><span class="pun">+</span><span class="pln"> prologue </span><span class="pun">+</span><span class="pln"> query </span><span class="pun">+</span><span class="pln"> tail </span><span class="pun">+</span><span class="pln"> </span><span class="str">"&lt;/html&gt;"</span><span class="pln"> </span><span class="com"># Так лучше не делать!</span></pre>
+      <p>Вместо этого используйте:</p>
+      <pre class="prettyprint lang-py"><span class="pln">out </span><span class="pun">=</span><span class="pln"> </span><span class="str">"&lt;html&gt;%s%s%s%s&lt;/html&gt;"</span><span class="pln"> </span><span class="pun">%</span><span class="pln"> </span><span class="pun">(</span><span class="pln">head</span><span class="pun">,</span><span class="pln"> prologue</span><span class="pun">,</span><span class="pln"> query</span><span class="pun">,</span><span class="pln"> tail</span><span class="pun">)</span><span class="pln"> </span><span class="com"># Рекомендованный способ.</span></pre>
+      <p>Для улучшения читабельности (никак не влияет на 
+производительность программы, только на вашу, как программиста), 
+используйте словарное описание:
+      </p>
+      <pre class="prettyprint lang-py"><span class="pln">out </span><span class="pun">=</span><span class="pln"> </span><span class="str">"%(head)s%(prologue)s%(query)s%(tail)s"</span><span class="pln"> </span><span class="pun">%</span><span class="pln"> locals</span><span class="pun">()</span><span class="pln"> </span><span class="com"># Рекомендованный для читабельности способ.</span></pre>
+      <p>Последние два способа должны быть намного быстрее, особенно 
+если через них пропускается огромное количество CGI-запусков, а также 
+более легкими в сопровождении.
+      К тому же, не рекомендованный медленный способ стал еще медленнее в
+ Python 2.0 после добавления возможности перегрузить операторы 
+сравнения. Теперь Python тратит больше времени, чтобы определить как 
+складывать две строки (не забываем, что Python производит поиск методов 
+прямо во время работы программы).
+      </p>
+      <h5>Примечание переводчика:</h5>
+        <p>Для того, чтобы можно было сделать какие-либо выводы, привожу следующий бенчмарк (Python 3.2.3):</p>
+      <pre class="prettyprint lang-py"><span class="pun">&gt;&gt;&gt;</span><span class="pln"> timeit</span><span class="pun">(</span><span class="str">'"&lt;html&gt;" + foo + bar + "&lt;/html&gt;"'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'foo = "Foo"; bar = "Bar"'</span><span class="pun">)</span><span class="pln">
+</span><span class="lit">0.44135117530822754</span><span class="pln">
+</span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> timeit</span><span class="pun">(</span><span class="str">'"&lt;html&gt;%s%s&lt;/html&gt;" % (foo, bar)'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'foo = "Foo"; bar = "Bar"'</span><span class="pun">)</span><span class="pln">
+</span><span class="lit">0.8441739082336426</span><span class="pln">
+
+</span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> timeit</span><span class="pun">(</span><span class="str">'out = "&lt;html&gt;" + foo + "&lt;br&gt;" + bar + "&lt;/html&gt;"'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'foo = "Foo"; bar = "Bar"'</span><span class="pun">)</span><span class="pln">
+</span><span class="lit">0.5593209266662598</span><span class="pln">
+</span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> timeit</span><span class="pun">(</span><span class="str">'out = "&lt;html&gt;%s&lt;br&gt;%s&lt;/html&gt;" % (foo, bar)'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'foo = "Foo"; bar = "Bar"'</span><span class="pun">)</span><span class="pln">
+</span><span class="lit">0.8703830242156982</span><span class="pln">
+
+</span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> timeit</span><span class="pun">(</span><span class="str">'out = "&lt;html&gt;" + foo + "&lt;br&gt;" + bar + "&lt;br&gt;" + foo + "&lt;br&gt;" + bar + "&lt;/html&gt;"'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'foo = "Foo"; bar = "Bar"'</span><span class="pun">)</span><span class="pln">
+</span><span class="lit">1.172637939453125</span><span class="pln">
+</span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> timeit</span><span class="pun">(</span><span class="str">'out = "&lt;html&gt;%s&lt;br&gt;%s&lt;br&gt;%s&lt;br&gt;%s&lt;/html&gt;" % (foo, bar, foo, bar)'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'foo = "Foo"; bar = "Bar"'</span><span class="pun">)</span><span class="pln">
+</span><span class="lit">1.0721790790557861</span><span class="pln">   </span></pre>
+        <p>Как видите, скорость действительно зависит от конкретного 
+случая, и лучших результатов можно добиться только при смешанном 
+подходе.</p>
+
+
+      <h4>Циклы</h4>
+      <p>Python поддерживает несколько циклических конструкций. Оператор
+ for является наиболее часто используемым. Он проходит циклом по каждому
+ элементу выражения, присваивая каждому элементу переменную цикла. Если 
+тело вашего цикла простое, процессорное время самой функции for может 
+составлять существенную часть общей нагрузки на проведение операции. 
+Именно здесь может пригодиться использование функции map. Функцию map 
+можно представить как перенесение встроенной функции for на язык C. 
+Единственное ограничение – телом цикла должен быть вызов функции.
+      Еще один способ -  списочные выражения
+      , они выполняется быстрее, или, как минимум, так же быстро, как 
+цикл map.
+      Наглядный пример. Вместо того, чтобы проходить циклом по каждому 
+элементу списка и переводить весь текст в верхний регистр:
+      </p>
+      <pre class="prettyprint lang-py"><span class="pln">newlist </span><span class="pun">=</span><span class="pln"> </span><span class="pun">[]</span><span class="pln">
+</span><span class="kwd">for</span><span class="pln"> word </span><span class="kwd">in</span><span class="pln"> oldlist</span><span class="pun">:</span><span class="pln">
+	newlist</span><span class="pun">.</span><span class="pln">append</span><span class="pun">(</span><span class="pln">word</span><span class="pun">.</span><span class="pln">upper</span><span class="pun">())</span></pre>
+      <p>
+      Можно использовать map, чтобы перенести цикл на выполнение из интерпретатора в компилированный C код:
+      </p>
+      <pre class="prettyprint lang-py"><span class="pln">newlist </span><span class="pun">=</span><span class="pln"> map</span><span class="pun">(</span><span class="pln">str</span><span class="pun">.</span><span class="pln">upper</span><span class="pun">,</span><span class="pln"> oldlist</span><span class="pun">)</span></pre>
+      <p>Списочные выражения также были добавлены в Python 2.0. Они 
+предоставляют более компактный и эффективный способ записи 
+представленного выше примера:
+      </p>
+      <pre class="prettyprint lang-py"><span class="pln">newlist </span><span class="pun">=</span><span class="pln"> </span><span class="pun">[</span><span class="pln">s</span><span class="pun">.</span><span class="pln">upper</span><span class="pun">()</span><span class="pln"> </span><span class="kwd">for</span><span class="pln"> s </span><span class="kwd">in</span><span class="pln"> oldlist</span><span class="pun">]</span></pre>
+      <p>
+      Генераторы были добавлены в Python начиная с версии 2.4. Они 
+функционируют схожим со списочными выражениями или map образом, за 
+исключением того, что они избегают генерации всего списка сразу. Вместо 
+этого, объект-генератор предоставляет возможность выполнять операции 
+пошагово, друг за другом, одновременно загружая в память лишь один 
+объект внутри списка:
+      </p>
+      <pre class="prettyprint lang-py"><span class="pln">iterator </span><span class="pun">=</span><span class="pln"> </span><span class="pun">(</span><span class="pln">s</span><span class="pun">.</span><span class="pln">upper</span><span class="pun">()</span><span class="pln"> </span><span class="kwd">for</span><span class="pln"> s </span><span class="kwd">in</span><span class="pln"> oldlist</span><span class="pun">)</span></pre>
+      <p>
+      Какой метод использовать зависит от используемой версии Python и манипулируемых данных.
+      Гвидо ван Россум написал детальное руководство по оптимизации циклов, с которым обязательно <a href="http://www.python.org/doc/essays/list2str.html">стоит ознакомиться</a>.
+      </p>
+
+      <h4>Избегание точек [ . ]</h4>
+      <p>
+      Допустим, вы не можете использовать функцию map или списочные 
+выражения, вам остается использовать только for. Пример с циклом for 
+имеет еще один недостаток. Такие операции, как newlist.append и 
+word.upper, являются ссылками на функции, которые определяются каждый 
+раз во время цикла. Оригинальный цикл можно заменить следующим:
+      </p><p>
+      </p><pre class="prettyprint lang-py"><span class="pln">upper </span><span class="pun">=</span><span class="pln"> str</span><span class="pun">.</span><span class="pln">upper
+newlist </span><span class="pun">=</span><span class="pln"> </span><span class="pun">[]</span><span class="pln">
+append </span><span class="pun">=</span><span class="pln"> newlist</span><span class="pun">.</span><span class="pln">append
+</span><span class="kwd">for</span><span class="pln"> word </span><span class="kwd">in</span><span class="pln"> oldlist</span><span class="pun">:</span><span class="pln">
+	append</span><span class="pun">(</span><span class="pln">upper</span><span class="pun">(</span><span class="pln">word</span><span class="pun">))</span></pre>
+      <p>
+      Эта техника должна использоваться с предельной осторожность. 
+Большие циклы становится труднее поддерживать, т.&nbsp;к. вам придется 
+постоянно проверять код, чтобы понимать, что конкретно значат эти append
+ и upper.
+      </p>
+      <p>От переводчика:<br>
+      Правила избежания точек относятся и к импорту модулей. В качестве примера:
+      </p>
+      <pre class="prettyprint lang-py"><span class="pun">&gt;&gt;&gt;</span><span class="pln"> timeit</span><span class="pun">.</span><span class="pln">timeit </span><span class="pun">(</span><span class="str">"math.sqrt(4)"</span><span class="pun">,</span><span class="pln"> </span><span class="str">'import math'</span><span class="pun">)</span><span class="pln">
+</span><span class="lit">0.3284459114074707</span><span class="pln">
+</span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> timeit</span><span class="pun">.</span><span class="pln">timeit </span><span class="pun">(</span><span class="str">'sqrt(4)'</span><span class="pun">,</span><span class="pln"> </span><span class="str">'from math import sqrt'</span><span class="pun">)</span><span class="pln">
+</span><span class="lit">0.25652194023132324</span></pre>
+      <p>
+      То есть лишь одно изменение правил импортирования приводит к 30% росту производительности одной итерации.
+      </p>
+
+      <h4>Локальные переменные</h4>
+      <p>Последняя возможность ускорить цикл for — использование 
+локальных переменных везде, где это возможно. Если наш пример перевести в
+ функцию, append и upper становятся локальными переменными. Python 
+работает гораздо эффективнее с локальными переменными, чем с 
+глобальными.
+      </p><p>
+      </p><pre class="prettyprint lang-py"><span class="kwd">def</span><span class="pln"> func</span><span class="pun">():</span><span class="pln">
+	upper </span><span class="pun">=</span><span class="pln"> str</span><span class="pun">.</span><span class="pln">upper
+	newlist </span><span class="pun">=</span><span class="pln"> </span><span class="pun">[]</span><span class="pln">
+	append </span><span class="pun">=</span><span class="pln"> newlist</span><span class="pun">.</span><span class="pln">append
+	</span><span class="kwd">for</span><span class="pln"> word </span><span class="kwd">in</span><span class="pln"> oldlist</span><span class="pun">:</span><span class="pln">
+		append</span><span class="pun">(</span><span class="pln">upper</span><span class="pun">(</span><span class="pln">word</span><span class="pun">))</span><span class="pln">
+	</span><span class="kwd">return</span><span class="pln"> newlist</span></pre>
+      <p>На тот момент, когда я начал писать эту статью, я использовал 
+100MHz Pentium, на котором был запущен BSDI. Я получил следующие 
+значения по времени исполнения при преобразовании списка слов 
+/usr/share/dict/words (38,470 слов на то время) в верхний регистр:
+      </p>
+      <pre class="prettyprint lang-py"><span class="typ">Version</span><span class="pln"> </span><span class="typ">Time</span><span class="pln"> </span><span class="pun">(</span><span class="pln">seconds</span><span class="pun">)</span><span class="pln">
+</span><span class="typ">Basic</span><span class="pln"> loop </span><span class="lit">3.47</span><span class="pln">
+</span><span class="typ">Eliminate</span><span class="pln"> dots </span><span class="lit">2.45</span><span class="pln">
+</span><span class="typ">Local</span><span class="pln"> variable </span><span class="pun">&amp;</span><span class="pln"> no dots </span><span class="lit">1.79</span><span class="pln">
+</span><span class="typ">Using</span><span class="pln"> map function </span><span class="lit">0.54</span></pre>
+      <h4>Инициализация словарей</h4>
+      <p>
+      Представим, что вы создаете словарь для хранения количества 
+встречающихся слов и вы уже разбили ваш текст на список слов. Вы можете 
+использовать для этого нечто вроде:
+      </p>
+      <pre class="prettyprint lang-py"><span class="pln">wdict </span><span class="pun">=</span><span class="pln"> </span><span class="pun">{}</span><span class="pln">
+</span><span class="kwd">for</span><span class="pln"> word </span><span class="kwd">in</span><span class="pln"> words</span><span class="pun">:</span><span class="pln">
+	</span><span class="kwd">if</span><span class="pln"> word </span><span class="kwd">not</span><span class="pln"> </span><span class="kwd">in</span><span class="pln"> wdict</span><span class="pun">:</span><span class="pln">
+		wdict</span><span class="pun">[</span><span class="pln">word</span><span class="pun">]</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> </span><span class="lit">0</span><span class="pln">
+	wdict</span><span class="pun">[</span><span class="pln">word</span><span class="pun">]</span><span class="pln"> </span><span class="pun">+=</span><span class="pln"> </span><span class="lit">1</span></pre>
+      <p>
+      За исключением первого раза, каждый раз слово возвращает False 
+проходя через оператор if. Когда вы считаете большое количество слов, 
+скорее всего многие из них будут попадаться не один раз. В случаях, 
+когда инициализация значения происходит лишь однажды, а основная работа 
+идет над изменением значения, гораздо эффективнее будет использование 
+оператора try:
+      </p>
+      <pre class="prettyprint lang-py"><span class="pln">wdict </span><span class="pun">=</span><span class="pln"> </span><span class="pun">{}</span><span class="pln">
+</span><span class="kwd">for</span><span class="pln"> word </span><span class="kwd">in</span><span class="pln"> words</span><span class="pun">:</span><span class="pln">
+	</span><span class="kwd">try</span><span class="pun">:</span><span class="pln">
+		wdict</span><span class="pun">[</span><span class="pln">word</span><span class="pun">]</span><span class="pln"> </span><span class="pun">+=</span><span class="pln"> </span><span class="lit">1</span><span class="pln">
+	</span><span class="kwd">except</span><span class="pln"> </span><span class="typ">KeyError</span><span class="pun">:</span><span class="pln">
+		wdict</span><span class="pun">[</span><span class="pln">word</span><span class="pun">]</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> </span><span class="lit">1</span></pre>
+      <p>
+      Важно перехватывать только ожидаемое исключение KeyError, чтобы 
+избежать ситуации с перехватом исключения, которое вы на самом деле не 
+сможете обработать.
+      Третий способ становится доступным с выпуском Python 2. Словари 
+теперь поддерживают метод get(), который установит значение по 
+умолчанию, если необходимый ключ не был найден в словаре.
+      Этот способ значительно сокращает цикл:
+      </p>
+      <pre class="prettyprint lang-py"><span class="pln">wdict </span><span class="pun">=</span><span class="pln"> </span><span class="pun">{}</span><span class="pln">
+get </span><span class="pun">=</span><span class="pln"> wdict</span><span class="pun">.</span><span class="pln">get
+</span><span class="kwd">for</span><span class="pln"> word </span><span class="kwd">in</span><span class="pln"> words</span><span class="pun">:</span><span class="pln">
+	wdict</span><span class="pun">[</span><span class="pln">word</span><span class="pun">]</span><span class="pln"> </span><span class="pun">=</span><span class="pln"> get</span><span class="pun">(</span><span class="pln">word</span><span class="pun">,</span><span class="pln"> </span><span class="lit">0</span><span class="pun">)</span><span class="pln"> </span><span class="pun">+</span><span class="pln"> </span><span class="lit">1</span></pre>
+      <p>
+      На данный момент все три варианта решения имеют схожую 
+производительности (с разницей не более 10%), более или менее независимо
+ от обрабатываемых данных.
+      Также, если значение, которое хранится в словаре, является 
+объектом или изменяемым списком, вы также можете использовать метод 
+dict.setdefault:
+      </p>
+      <pre class="prettyprint lang-py"><span class="pln">      wdict</span><span class="pun">.</span><span class="pln">setdefault</span><span class="pun">(</span><span class="pln">key</span><span class="pun">,</span><span class="pln"> </span><span class="pun">[]).</span><span class="pln">append</span><span class="pun">(</span><span class="pln">new_element</span><span class="pun">)</span><span class="pln">      </span></pre>
+      <p>
+      Вы можете решить, что этот способ исключает производимое дважды 
+обращение к ключу. На самом деле это не так (даже в Python 3), но, как 
+минимум, двойное обращение производится средствами C.
+      Еще одно решение — использование класса <a href="http://docs.python.org/py3k/library/collections.html#collections.defaultdict">defaultdict</a>:
+      </p>
+      <pre class="prettyprint lang-py"><span class="kwd">from</span><span class="pln"> collections </span><span class="kwd">import</span><span class="pln"> defaultdict
+
+wdict </span><span class="pun">=</span><span class="pln"> defaultdict</span><span class="pun">(</span><span class="pln">int</span><span class="pun">)</span><span class="pln">
+
+</span><span class="kwd">for</span><span class="pln"> word </span><span class="kwd">in</span><span class="pln"> words</span><span class="pun">:</span><span class="pln">
+	wdict</span><span class="pun">[</span><span class="pln">word</span><span class="pun">]</span><span class="pln"> </span><span class="pun">+=</span><span class="pln"> </span><span class="lit">1</span></pre>
+      <h4>Перегрузки от выражений импорта</h4>
+      <p>
+      Операция импорта может быть запущена где угодно в программном 
+коде. Часто бывает полезным размещать их внутри функций, чтобы 
+ограничить их видимость и уменьшить начальное время запуска приложения. 
+Хотя интерпретатор Python оптимизирован, чтобы не производить импорт 
+одного и того же модуля несколько раз, повторный вызов функции импорта 
+может некоторым образом отразиться на производительности.
+      Рассмотрим следующие фрагменты кода (взятые, как мне кажется, у 
+Greg McFarlane):
+      </p><p>
+      </p><pre class="prettyprint lang-py"><span class="kwd">def</span><span class="pln"> doit1</span><span class="pun">():</span><span class="pln">
+	</span><span class="kwd">import</span><span class="pln"> string </span><span class="com">###### Импорт внутри функции</span><span class="pln">
+	string</span><span class="pun">.</span><span class="pln">lower</span><span class="pun">(</span><span class="str">'Python'</span><span class="pun">)</span><span class="pln">
+
+</span><span class="kwd">for</span><span class="pln"> num </span><span class="kwd">in</span><span class="pln"> range</span><span class="pun">(</span><span class="lit">100000</span><span class="pun">):</span><span class="pln">
+	doit1</span><span class="pun">()</span></pre>
+      <p>Или:</p>
+      <pre class="prettyprint lang-py"><span class="kwd">import</span><span class="pln"> string </span><span class="com">###### Импорт за пределами функции</span><span class="pln">
+</span><span class="kwd">def</span><span class="pln"> doit2</span><span class="pun">():</span><span class="pln">
+	string</span><span class="pun">.</span><span class="pln">lower</span><span class="pun">(</span><span class="str">'Python'</span><span class="pun">)</span><span class="pln">
+
+</span><span class="kwd">for</span><span class="pln"> num </span><span class="kwd">in</span><span class="pln"> range</span><span class="pun">(</span><span class="lit">100000</span><span class="pun">):</span><span class="pln">
+	doit2</span><span class="pun">()</span></pre>
+      <p>
+      Функция doit2 будет работать значительно быстрее, чем doit1, даже 
+не смотря на то, что doit2 обращается к модулю string глобально.
+      Ниже представлена сессия интерпретатора Python 2.3 с модулем 
+timeit, которая показывает, насколько второй способ быстрее первого:
+      </p>
+      <pre class="prettyprint lang-py"><span class="pun">&gt;&gt;&gt;</span><span class="pln"> </span><span class="kwd">def</span><span class="pln"> doit1</span><span class="pun">():</span><span class="pln">
+</span><span class="pun">...</span><span class="pln"> 	</span><span class="kwd">import</span><span class="pln"> string
+</span><span class="pun">...</span><span class="pln"> 	string</span><span class="pun">.</span><span class="pln">lower</span><span class="pun">(</span><span class="str">'Python'</span><span class="pun">)</span><span class="pln">
+</span><span class="pun">...</span><span class="pln">
+</span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> </span><span class="kwd">import</span><span class="pln"> string
+</span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> </span><span class="kwd">def</span><span class="pln"> doit2</span><span class="pun">():</span><span class="pln">
+</span><span class="pun">...</span><span class="pln"> 	string</span><span class="pun">.</span><span class="pln">lower</span><span class="pun">(</span><span class="str">'Python'</span><span class="pun">)</span><span class="pln">
+</span><span class="pun">...</span><span class="pln">
+</span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> </span><span class="kwd">import</span><span class="pln"> timeit
+</span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> t </span><span class="pun">=</span><span class="pln"> timeit</span><span class="pun">.</span><span class="typ">Timer</span><span class="pun">(</span><span class="pln">setup</span><span class="pun">=</span><span class="str">'from __main__ import doit1'</span><span class="pun">,</span><span class="pln"> stmt</span><span class="pun">=</span><span class="str">'doit1()'</span><span class="pun">)</span><span class="pln">
+</span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> t</span><span class="pun">.</span><span class="pln">timeit</span><span class="pun">()</span><span class="pln">
+</span><span class="lit">11.479144930839539</span><span class="pln">
+</span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> t </span><span class="pun">=</span><span class="pln"> timeit</span><span class="pun">.</span><span class="typ">Timer</span><span class="pun">(</span><span class="pln">setup</span><span class="pun">=</span><span class="str">'from __main__ import doit2'</span><span class="pun">,</span><span class="pln"> stmt</span><span class="pun">=</span><span class="str">'doit2()'</span><span class="pun">)</span><span class="pln">
+</span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> t</span><span class="pun">.</span><span class="pln">timeit</span><span class="pun">()</span><span class="pln">
+</span><span class="lit">4.6661689281463623</span></pre>
+      <p>
+      Строковые методы были представлены в Python 2.0. Они представляют 
+версию, которая совсем обходится без импортирования и работает еще 
+быстрее:
+      </p>
+      <pre class="prettyprint lang-py"><span class="kwd">def</span><span class="pln"> doit3</span><span class="pun">():</span><span class="pln">
+	</span><span class="str">'Python'</span><span class="pun">.</span><span class="pln">lower</span><span class="pun">()</span><span class="pln">
+
+</span><span class="kwd">for</span><span class="pln"> num </span><span class="kwd">in</span><span class="pln"> range</span><span class="pun">(</span><span class="lit">100000</span><span class="pun">):</span><span class="pln">
+	doit3</span><span class="pun">()</span></pre>
+      <p>
+      Наглядное подтверждение:
+      </p>
+      <pre class="prettyprint lang-py"><span class="pun">&gt;&gt;&gt;</span><span class="pln"> </span><span class="kwd">def</span><span class="pln"> doit3</span><span class="pun">():</span><span class="pln">
+</span><span class="pun">...</span><span class="pln"> 	</span><span class="str">'Python'</span><span class="pun">.</span><span class="pln">lower</span><span class="pun">()</span><span class="pln">
+</span><span class="pun">...</span><span class="pln">
+</span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> t </span><span class="pun">=</span><span class="pln"> timeit</span><span class="pun">.</span><span class="typ">Timer</span><span class="pun">(</span><span class="pln">setup</span><span class="pun">=</span><span class="str">'from __main__ import doit3'</span><span class="pun">,</span><span class="pln"> stmt</span><span class="pun">=</span><span class="str">'doit3()'</span><span class="pun">)</span><span class="pln">
+</span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> t</span><span class="pun">.</span><span class="pln">timeit</span><span class="pun">()</span><span class="pln">
+</span><span class="lit">2.5606080293655396</span></pre>
+      <p>
+      Имейте в виду, импорт модуля внутри функции может ускорить 
+начальную загрузку модуля, особенно если импортируемый модуль может не 
+понадобиться. Это в общих терминах случай «ленивой» оптимизации — 
+исключение лишней работы - импортирование тяжеловесного модуля только 
+тогда, когда вы уверены, что он точно вам понадобится.
+      Это является существенной оптимизацией только если модуль не будет
+ загружен вовсе (из любого модуля) — если модуль уже был загружен (что 
+является обычным случаем для многих стандартных модулей, таких как 
+string или re), избегание импорта никак не оптимизирует ваш код. Чтобы 
+узнать, какие модули загружены в систему, используйте sys.modules.
+      Хороший способ выполнения «ленивого» импорта:
+      <br>
+      </p>
+      <pre class="prettyprint lang-py"><span class="pln">email </span><span class="pun">=</span><span class="pln"> </span><span class="kwd">None</span><span class="pln">
+
+</span><span class="kwd">def</span><span class="pln"> parse_email</span><span class="pun">():</span><span class="pln">
+	</span><span class="kwd">global</span><span class="pln"> email
+	</span><span class="kwd">if</span><span class="pln"> email </span><span class="kwd">is</span><span class="pln"> </span><span class="kwd">None</span><span class="pun">:</span><span class="pln">
+		</span><span class="kwd">import</span><span class="pln"> email
+</span><span class="pun">...</span></pre>
+      <p>
+      Таким способом модуль email будет импортирован лишь однажды, при первом вызове parse_email().
+      </p>
+      <h4>Агрегация данных</h4>
+      <p>Затраты на вызов функции в Python относительно высоки, особенно
+ сравнивая с запуском встроенных функций. Это позволяет сделать выводы, 
+что функции, если это возможно, должны сами заниматься агрегацией 
+данных.  Рассмотрим пример.
+      <br>Способ 1:</p>
+      <pre class="prettyprint lang-py"><span class="kwd">import</span><span class="pln"> time
+x </span><span class="pun">=</span><span class="pln"> </span><span class="lit">0</span><span class="pln">
+</span><span class="kwd">def</span><span class="pln"> doit1</span><span class="pun">(</span><span class="pln">i</span><span class="pun">):</span><span class="pln">
+	</span><span class="kwd">global</span><span class="pln"> x
+	x </span><span class="pun">=</span><span class="pln"> x </span><span class="pun">+</span><span class="pln"> i
+
+list </span><span class="pun">=</span><span class="pln"> range</span><span class="pun">(</span><span class="lit">100000</span><span class="pun">)</span><span class="pln">
+t </span><span class="pun">=</span><span class="pln"> time</span><span class="pun">.</span><span class="pln">time</span><span class="pun">()</span><span class="pln">
+</span><span class="kwd">for</span><span class="pln"> i </span><span class="kwd">in</span><span class="pln"> list</span><span class="pun">:</span><span class="pln">
+	doit1</span><span class="pun">(</span><span class="pln">i</span><span class="pun">)</span><span class="pln">
+
+</span><span class="kwd">print</span><span class="pln"> </span><span class="str">"%.3f"</span><span class="pln"> </span><span class="pun">%</span><span class="pln"> </span><span class="pun">(</span><span class="pln">time</span><span class="pun">.</span><span class="pln">time</span><span class="pun">()-</span><span class="pln">t</span><span class="pun">)</span></pre>
+      <p>Способ 2:</p>
+      <pre class="prettyprint lang-py"><span class="kwd">import</span><span class="pln"> time
+x </span><span class="pun">=</span><span class="pln"> </span><span class="lit">0</span><span class="pln">
+</span><span class="kwd">def</span><span class="pln"> doit2</span><span class="pun">(</span><span class="pln">list</span><span class="pun">):</span><span class="pln">
+	</span><span class="kwd">global</span><span class="pln"> x
+	</span><span class="kwd">for</span><span class="pln"> i </span><span class="kwd">in</span><span class="pln"> list</span><span class="pun">:</span><span class="pln">
+		x </span><span class="pun">=</span><span class="pln"> x </span><span class="pun">+</span><span class="pln"> i
+
+list </span><span class="pun">=</span><span class="pln"> range</span><span class="pun">(</span><span class="lit">100000</span><span class="pun">)</span><span class="pln">
+t </span><span class="pun">=</span><span class="pln"> time</span><span class="pun">.</span><span class="pln">time</span><span class="pun">()</span><span class="pln">
+doit2</span><span class="pun">(</span><span class="pln">list</span><span class="pun">)</span><span class="pln">
+</span><span class="kwd">print</span><span class="pln"> </span><span class="str">"%.3f"</span><span class="pln"> </span><span class="pun">%</span><span class="pln"> </span><span class="pun">(</span><span class="pln">time</span><span class="pun">.</span><span class="pln">time</span><span class="pun">()-</span><span class="pln">t</span><span class="pun">)</span></pre>
+      <p>
+      Рассмотрим результаты запуска:
+      </p>
+<pre class="prettyprint lang-py"><span class="pun">&gt;&gt;&gt;</span><span class="pln"> t </span><span class="pun">=</span><span class="pln"> time</span><span class="pun">.</span><span class="pln">time</span><span class="pun">()</span><span class="pln">
+</span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> </span><span class="kwd">for</span><span class="pln"> i </span><span class="kwd">in</span><span class="pln"> list</span><span class="pun">:</span><span class="pln">
+</span><span class="pun">...</span><span class="pln"> 	doit1</span><span class="pun">(</span><span class="pln">i</span><span class="pun">)</span><span class="pln">
+</span><span class="pun">...</span><span class="pln">
+</span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> </span><span class="kwd">print</span><span class="pln"> </span><span class="str">"%.3f"</span><span class="pln"> </span><span class="pun">%</span><span class="pln"> </span><span class="pun">(</span><span class="pln">time</span><span class="pun">.</span><span class="pln">time</span><span class="pun">()-</span><span class="pln">t</span><span class="pun">)</span><span class="pln">
+</span><span class="lit">0.758</span><span class="pln">
+</span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> t </span><span class="pun">=</span><span class="pln"> time</span><span class="pun">.</span><span class="pln">time</span><span class="pun">()</span><span class="pln">
+</span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> doit2</span><span class="pun">(</span><span class="pln">list</span><span class="pun">)</span><span class="pln">
+</span><span class="pun">&gt;&gt;&gt;</span><span class="pln"> </span><span class="kwd">print</span><span class="pln"> </span><span class="str">"%.3f"</span><span class="pln"> </span><span class="pun">%</span><span class="pln"> </span><span class="pun">(</span><span class="pln">time</span><span class="pun">.</span><span class="pln">time</span><span class="pun">()-</span><span class="pln">t</span><span class="pun">)</span><span class="pln">
+</span><span class="lit">0.204</span></pre>
+      <p>
+      Даже написанный на Python, второй способ работает почти в четыре 
+раза быстрее первого. Если бы функция doit была написана на C — разница 
+была бы еще более существенной (заменяя цикл for, написанный на python, 
+циклом for на C, а также с устранением большинства вызовов функций).
+      </p>
+      <h4>Уменьшение частоты выполнения операций</h4>
+      <p>
+      Интерпретатор Python проводит некоторые переодические проверки. В 
+частности, он решает, стоит ли передавать управление другому потоку, или
+ стоит передать управление отложенному вызову (обычно это вызов, 
+установленный обработчиком сигнала).
+		В большинстве случаев он простаивает без работы, и вызов этих проверок
+ каждый цикл интерпретатора может замедлять работу приложения. 
+Существует функция в модуле sys — setcheckinterval, в которой можно 
+указать, через какой промежуток внутренних тактов интерпретатора следует
+ выполнять переодические проверки. По отношению к релизу до 2.3 это 
+значение установлено как 10.  В 2.3 значение было увеличено до 100. Если
+ вы не работаете с потоками и вы не расчитываете перехватывать большое 
+количество сигналов, установка высокого значения этого параметра может 
+повысить производительность, иногда значительно.
+      </p>
+      <h4>Python - не C++</h4>
+      <p>А также не Perl, Java, C или Haskell. Будьте аккуратны, когда 
+переносите свои знания из других языков для решения задач в Python. 
+Обычный пример служит отличной демонстрацией:
+      </p>
+      <pre class="prettyprint lang-py"><span class="pun">%</span><span class="pln"> timeit</span><span class="pun">.</span><span class="pln">py </span><span class="pun">-</span><span class="pln">s </span><span class="str">'x = 47'</span><span class="pln"> </span><span class="str">'x * 2'</span><span class="pln">
+</span><span class="lit">1000000</span><span class="pln"> loops</span><span class="pun">,</span><span class="pln"> best of </span><span class="lit">3</span><span class="pun">:</span><span class="pln"> </span><span class="lit">0.574</span><span class="pln"> usec per loop
+</span><span class="pun">%</span><span class="pln"> timeit</span><span class="pun">.</span><span class="pln">py </span><span class="pun">-</span><span class="pln">s </span><span class="str">'x = 47'</span><span class="pln"> </span><span class="str">'x &lt;&lt; 1'</span><span class="pln">
+</span><span class="lit">1000000</span><span class="pln"> loops</span><span class="pun">,</span><span class="pln"> best of </span><span class="lit">3</span><span class="pun">:</span><span class="pln"> </span><span class="lit">0.524</span><span class="pln"> usec per loop
+</span><span class="pun">%</span><span class="pln"> timeit</span><span class="pun">.</span><span class="pln">py </span><span class="pun">-</span><span class="pln">s </span><span class="str">'x = 47'</span><span class="pln"> </span><span class="str">'x + x'</span><span class="pln">
+</span><span class="lit">1000000</span><span class="pln"> loops</span><span class="pun">,</span><span class="pln"> best of </span><span class="lit">3</span><span class="pun">:</span><span class="pln"> </span><span class="lit">0.382</span><span class="pln"> usec per loop</span></pre>
+      <p>
+      Теперь рассмотрим похожие программы на C (показан только пример с суммой):
+      </p>
+      <pre class="prettyprint lang-c"><span class="com">#include</span><span class="pln"> </span><stdio.h><span class="pln">
+
+</span><span class="typ">int</span><span class="pln"> main </span><span class="pun">(</span><span class="typ">int</span><span class="pln"> argc</span><span class="pun">,</span><span class="pln"> </span><span class="kwd">char</span><span class="pln"> </span><span class="pun">*</span><span class="pln">argv</span><span class="pun">[])</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+	</span><span class="typ">int</span><span class="pln"> i </span><span class="pun">=</span><span class="pln"> </span><span class="lit">47</span><span class="pun">;</span><span class="pln">
+	</span><span class="typ">int</span><span class="pln"> loop</span><span class="pun">;</span><span class="pln">
+	</span><span class="kwd">for</span><span class="pln"> </span><span class="pun">(</span><span class="pln">loop</span><span class="pun">=</span><span class="lit">0</span><span class="pun">;</span><span class="pln"> loop</span><span class="pun">&lt;</span><span class="lit">500000000</span><span class="pun">;</span><span class="pln"> loop</span><span class="pun">++)</span><span class="pln">
+		i </span><span class="pun">+</span><span class="pln"> i</span><span class="pun">;</span><span class="pln">
+		</span><span class="kwd">return</span><span class="pln"> </span><span class="lit">0</span><span class="pun">;</span><span class="pln">
+</span><span class="pun">}</span></stdio.h></pre>
+          <p>Сравним время запуска:</p>
+          <pre class="prettyprint lang-c"><span class="pln">  </span><span class="pun">%</span><span class="pln"> </span><span class="kwd">for</span><span class="pln"> prog in mult add shift </span><span class="pun">;</span><span class="pln"> </span><span class="kwd">do</span><span class="pln">
+  </span><span class="pun">&lt;</span><span class="pln"> </span><span class="kwd">for</span><span class="pln"> i in </span><span class="lit">1</span><span class="pln"> </span><span class="lit">2</span><span class="pln"> </span><span class="lit">3</span><span class="pln"> </span><span class="pun">;</span><span class="pln"> </span><span class="kwd">do</span><span class="pln">
+  </span><span class="pun">&lt;</span><span class="pln"> echo </span><span class="pun">-</span><span class="pln">n </span><span class="str">"$prog: "</span><span class="pln">
+  </span><span class="pun">&lt;</span><span class="pln"> </span><span class="pun">/</span><span class="pln">usr</span><span class="pun">/</span><span class="pln">bin</span><span class="pun">/</span><span class="pln">time </span><span class="pun">./</span><span class="pln">$prog
+  </span><span class="pun">&lt;</span><span class="pln"> done
+  </span><span class="pun">&lt;</span><span class="pln"> echo
+  </span><span class="pun">&lt;</span><span class="pln"> done
+  mult</span><span class="pun">:</span><span class="pln"> </span><span class="lit">6.12</span><span class="pln"> real </span><span class="lit">5.64</span><span class="pln"> user </span><span class="lit">0.01</span><span class="pln"> sys
+  mult</span><span class="pun">:</span><span class="pln"> </span><span class="lit">6.08</span><span class="pln"> real </span><span class="lit">5.50</span><span class="pln"> user </span><span class="lit">0.04</span><span class="pln"> sys
+  mult</span><span class="pun">:</span><span class="pln"> </span><span class="lit">6.10</span><span class="pln"> real </span><span class="lit">5.45</span><span class="pln"> user </span><span class="lit">0.03</span><span class="pln"> sys
+
+  add</span><span class="pun">:</span><span class="pln"> </span><span class="lit">6.07</span><span class="pln"> real </span><span class="lit">5.54</span><span class="pln"> user </span><span class="lit">0.00</span><span class="pln"> sys
+  add</span><span class="pun">:</span><span class="pln"> </span><span class="lit">6.08</span><span class="pln"> real </span><span class="lit">5.60</span><span class="pln"> user </span><span class="lit">0.00</span><span class="pln"> sys
+  add</span><span class="pun">:</span><span class="pln"> </span><span class="lit">6.07</span><span class="pln"> real </span><span class="lit">5.58</span><span class="pln"> user </span><span class="lit">0.01</span><span class="pln"> sys
+
+  shift</span><span class="pun">:</span><span class="pln"> </span><span class="lit">6.09</span><span class="pln"> real </span><span class="lit">5.55</span><span class="pln"> user </span><span class="lit">0.01</span><span class="pln"> sys
+  shift</span><span class="pun">:</span><span class="pln"> </span><span class="lit">6.10</span><span class="pln"> real </span><span class="lit">5.62</span><span class="pln"> user </span><span class="lit">0.01</span><span class="pln"> sys
+  shift</span><span class="pun">:</span><span class="pln"> </span><span class="lit">6.06</span><span class="pln"> real </span><span class="lit">5.50</span><span class="pln"> user </span><span class="lit">0.01</span><span class="pln"> sys</span></pre>
+          <p>Как видите, в Python наблюдается заметный прирост 
+производительности, если вы складываете число с самим собой, по 
+сравнению с умножением на два или сдвигом влево на один бит. В языке C, 
+на всех современных архитектурах, все три арифметические операции 
+переносятся в одну и ту же машинную инструкцию, которая тратит на запуск
+ один цикл, поэтому особо не имеет значения, какой способ вы выберите.</p>
+          <p>Распространенный «тест», который часто проводят новые программисты на Python, переводя распространенную идиому языка Perl</p>
+          <pre class="prettyprint lang-perl"><span class="kwd">while</span><span class="pln"> </span><span class="pun">(&lt;&gt;)</span><span class="pln"> </span><span class="pun">{</span><span class="pln">
+          </span><span class="kwd">print</span><span class="pun">;</span><span class="pln">
+          </span><span class="pun">}</span></pre>
+          <p>В Python этот код выглядит примерно следующим образом:</p>
+          <pre class="prettyprint lang-py"><span class="kwd">import</span><span class="pln"> fileinput
+
+</span><span class="kwd">for</span><span class="pln"> line </span><span class="kwd">in</span><span class="pln"> fileinput</span><span class="pun">.</span><span class="pln">input</span><span class="pun">():</span><span class="pln">
+	</span><span class="kwd">print</span><span class="pln"> line</span><span class="pun">,</span></pre>
+          <p>Они используют этот пример чтобы сделать выводы, что 
+Python, должно быть, намного медленнее Perl. Как уже неоднократно 
+отмечали, Python медленнее Perl в некоторых задачах, и быстрее в других.
+ Относительная производительность чаще зависит именно от вашего опыта в 
+обоих языках.
+              </p>
+
+          <h4>Используйте xrange вместо range</h4>
+          <p>Этот раздел не применим, если вы используете Python 3, где 
+функция range предоставляет итератор над диапазоном заданной длины, и 
+где функция xrange больше не существует.
+          В ранних версиях (до Python 3) имеется два способа получить 
+диапазон чисел: range и xrange. Большинство людей знает о range из-за 
+его очевидного имени, в то время как xrange находится в конце 
+алфавитного указателя и является менее известным.
+              </p>
+          <p>Функция xrange является генератором, она в общих чертах эквивалентна следующему коду:</p>
+          <pre class="prettyprint lang-py"><span class="kwd">def</span><span class="pln"> xrange</span><span class="pun">(</span><span class="pln">start</span><span class="pun">,</span><span class="pln"> stop</span><span class="pun">=</span><span class="kwd">None</span><span class="pun">,</span><span class="pln"> step</span><span class="pun">=</span><span class="lit">1</span><span class="pun">):</span><span class="pln">
+	</span><span class="kwd">if</span><span class="pln"> stop </span><span class="kwd">is</span><span class="pln"> </span><span class="kwd">None</span><span class="pun">:</span><span class="pln">
+		stop </span><span class="pun">=</span><span class="pln"> start
+		start </span><span class="pun">=</span><span class="pln"> </span><span class="lit">0</span><span class="pln">
+	</span><span class="kwd">else</span><span class="pun">:</span><span class="pln">
+		stop </span><span class="pun">=</span><span class="pln"> int</span><span class="pun">(</span><span class="pln">stop</span><span class="pun">)</span><span class="pln">
+	start </span><span class="pun">=</span><span class="pln"> int</span><span class="pun">(</span><span class="pln">start</span><span class="pun">)</span><span class="pln">
+	step </span><span class="pun">=</span><span class="pln"> int</span><span class="pun">(</span><span class="pln">step</span><span class="pun">)</span><span class="pln">
+
+	</span><span class="kwd">while</span><span class="pln"> start </span><span class="pun">&lt;</span><span class="pln"> stop</span><span class="pun">:</span><span class="pln">
+		</span><span class="kwd">yield</span><span class="pln"> start
+		start </span><span class="pun">+=</span><span class="pln"> step</span></pre>
+          <p>За исключением того, что она реализована на чистом C.</p>
+          <p>Функция xrange имеет свои ограничения. Она работает только с
+ целыми числами. Вы не можете использовать long или float (они будут 
+переконвертированы в int, как показано выше).
+          Тем не менее, она сохраняет много памяти, и если вы не 
+сохраняете генерируемый объект где-либо, то только один объект 
+существует в один момент времени.
+          Разница заключается в следующем: когда вы вызываете функцию 
+range, она создает список, который хранит в себе огромное количество 
+числовых объектов (int, float, long). Все эти объекты создаются 
+одновременно, и все они существуют вместе в один момент времени. Это 
+может быть проблемой, если массив чисел велик.
+          Напротив, xrange не создает числа одновременно — только 
+собственный объект диапазона. Числовые объекты создаются только когда вы
+ обращаетесь к генератору, то есть проходите по нему циклом. Например:
+          </p>
+          <pre class="prettyprint lang-py"><span class="pln">xrange</span><span class="pun">(</span><span class="pln">sys</span><span class="pun">.</span><span class="pln">maxint</span><span class="pun">)</span><span class="pln"> </span><span class="com"># Нет цикла, нет запроса next, поэтому числа не были сгенерированы</span></pre>
+          <p>Именно по этим причинам код выполняется моментально. Если 
+вы запустите таким же образом range, Python заблокируется. Он будет 
+слишком занят нахождением памяти для 9223372036854775807 (для 64-битной 
+архитектуры) числовых объектов, чтобы делать что-либо еще. Скорее всего,
+ процесс завершится исключением MemoryError.
+          В версиях Python до 2.2 xrange поддерживал также быструю 
+проверку на членство (i in xrange(n)), но эти функции были удалены из-за
+ отсутствия применения.
+          </p>
+
+          <h4>Присваивание функции «на лету»</h4>
+          <p>Скажем, у вас есть функция:</p>
+          <pre class="prettyprint lang-py"><span class="kwd">class</span><span class="pln"> </span><span class="typ">Test</span><span class="pun">:</span><span class="pln">
+	</span><span class="kwd">def</span><span class="pln"> check</span><span class="pun">(</span><span class="pln">self</span><span class="pun">,</span><span class="pln">a</span><span class="pun">,</span><span class="pln">b</span><span class="pun">,</span><span class="pln">c</span><span class="pun">):</span><span class="pln">
+		</span><span class="kwd">if</span><span class="pln"> a </span><span class="pun">==</span><span class="pln"> </span><span class="lit">0</span><span class="pun">:</span><span class="pln">
+			self</span><span class="pun">.</span><span class="pln">str </span><span class="pun">=</span><span class="pln"> b</span><span class="pun">*</span><span class="lit">100</span><span class="pln">
+		</span><span class="kwd">else</span><span class="pun">:</span><span class="pln">
+			self</span><span class="pun">.</span><span class="pln">str </span><span class="pun">=</span><span class="pln"> c</span><span class="pun">*</span><span class="lit">100</span><span class="pln">
+
+a </span><span class="pun">=</span><span class="pln"> </span><span class="typ">Test</span><span class="pun">()</span><span class="pln">
+</span><span class="kwd">def</span><span class="pln"> example</span><span class="pun">():</span><span class="pln">
+	</span><span class="kwd">for</span><span class="pln"> i </span><span class="kwd">in</span><span class="pln"> xrange</span><span class="pun">(</span><span class="lit">0</span><span class="pun">,</span><span class="lit">100000</span><span class="pun">):</span><span class="pln">
+		a</span><span class="pun">.</span><span class="pln">check</span><span class="pun">(</span><span class="pln">i</span><span class="pun">,</span><span class="str">"b"</span><span class="pun">,</span><span class="str">"c"</span><span class="pun">)</span><span class="pln">
+
+</span><span class="kwd">import</span><span class="pln"> profile
+profile</span><span class="pun">.</span><span class="pln">run</span><span class="pun">(</span><span class="str">"example()"</span><span class="pun">)</span></pre>
+          <p>Скажем, эта функция вызывается откуда-то много раз.</p>
+          <p>Ваша проверка будет иметь блок проверок if, замедляющий выполнение каждый раз, кроме первого. Можно сделать так:
+              </p>
+          <pre class="prettyprint lang-py"><span class="kwd">class</span><span class="pln"> </span><span class="typ">Test2</span><span class="pun">:</span><span class="pln">
+	</span><span class="kwd">def</span><span class="pln"> check</span><span class="pun">(</span><span class="pln">self</span><span class="pun">,</span><span class="pln">a</span><span class="pun">,</span><span class="pln">b</span><span class="pun">,</span><span class="pln">c</span><span class="pun">):</span><span class="pln">
+		self</span><span class="pun">.</span><span class="pln">str </span><span class="pun">=</span><span class="pln"> b</span><span class="pun">*</span><span class="lit">100</span><span class="pln">
+		self</span><span class="pun">.</span><span class="pln">check </span><span class="pun">=</span><span class="pln"> self</span><span class="pun">.</span><span class="pln">check_post
+	</span><span class="kwd">def</span><span class="pln"> check_post</span><span class="pun">(</span><span class="pln">self</span><span class="pun">,</span><span class="pln">a</span><span class="pun">,</span><span class="pln">b</span><span class="pun">,</span><span class="pln">c</span><span class="pun">):</span><span class="pln">
+		self</span><span class="pun">.</span><span class="pln">str </span><span class="pun">=</span><span class="pln"> c</span><span class="pun">*</span><span class="lit">100</span><span class="pln">
+
+a </span><span class="pun">=</span><span class="pln"> </span><span class="typ">Test2</span><span class="pun">()</span><span class="pln">
+</span><span class="kwd">def</span><span class="pln"> example2</span><span class="pun">():</span><span class="pln">
+	</span><span class="kwd">for</span><span class="pln"> i </span><span class="kwd">in</span><span class="pln"> xrange</span><span class="pun">(</span><span class="lit">0</span><span class="pun">,</span><span class="lit">100000</span><span class="pun">):</span><span class="pln">
+		a</span><span class="pun">.</span><span class="pln">check</span><span class="pun">(</span><span class="pln">i</span><span class="pun">,</span><span class="str">"b"</span><span class="pun">,</span><span class="str">"c"</span><span class="pun">)</span><span class="pln">
+
+</span><span class="kwd">import</span><span class="pln"> profile
+profile</span><span class="pun">.</span><span class="pln">run</span><span class="pun">(</span><span class="str">"example2()"</span><span class="pun">)</span></pre>
+          <p>Этот пример немного странный, но если оператор if у вас 
+содержит достаточно большое количество условий (или с множеством точек 
+[.]), вы можете избежать его постоянного прохождения, особенно если вы 
+знаете, что условие будет истинным только лишь в первый раз.
+              </p>
+          <h4>Профилирование кода</h4>
+          <p>Первым шагом в оптимизации вашей программы является 
+нахождение ресурсоемких мест. Трудно понять смысл оптимизации кода, 
+который никогда не был запущен, или который уже работает быстро. Я 
+использую два модуля для нахождения ресурсоемких точек моего кода, 
+профилирования и трассировки. В поздних примерах я использую также 
+модуль timeit, который появился в Python 2.3.
+          Ознакомьтесь с отдельной статьей <a href="http://wiki.python.org/moin/PythonSpeed/Profiling">profiling</a> для подробностей (на англ. языке).</p>
+          <h4>Профилирование</h4>
+          <p>Существует несколько <a href="http://docs.python.org/library/profile.html">профилирующих модулей</a>,
+ включенных в стандартные «батарейки» Python. Использование любого из 
+них для профилирования запуска некоторого набора функций достаточно 
+просто. Допустим, ваша главная функция называется main, не требует 
+входящих аргументов и вы хотите запустить ее под контролем профилирующих
+ модулей. В самом простом виде вы лишь запускаете:
+              </p>
+        <pre class="prettyprint lang-py"><span class="kwd">import</span><span class="pln"> profile
+profile</span><span class="pun">.</span><span class="pln">run</span><span class="pun">(</span><span class="str">'main()'</span><span class="pun">)</span><span class="pln">           </span></pre>
+          <p>Когда функция выполнится, профилирующий модуль распечатает 
+таблицу вызовов функций и времени исполнения. Вывод может быть 
+подкорректирован используя класс Stats, который включен в поставку 
+модуля. Начиная с Python 2.4 профилирование позволяет исследовать также 
+время выполнения встроенных модулей и модулей расширений.
+          Более существенное описание профилирования, используя profile и
+ pstats, может быть найдено по следующей <a href="http://web.archive.org/web/20060506162444/http://wingware.com/doc/howtos/performance-profiling-python-code">ссылке</a> (на англ.).
+          
+              </p>
+
+          <h4>Модули cProfile и Hotshot</h4>
+          <p>Начиная с Python 2.2, пакет <a href="http://www.python.org/doc/current/lib/module-hotshot.html">hotshot</a>
+ представляется как замена для модуля profile, хотя использование 
+cProfile сейчас является более предпочтительным. Основополагающий модуль
+ написан на C, поэтому использование hotshot (или cProfile) должно 
+приводить к гораздо меньшему влиянию на производительность и давать 
+более точную картину того, как ваше приложение работает. Существует 
+также программа hotshotmain.py, которая упрощает запуск вашего 
+приложения под hotshot из командной строки.
+              </p>
+          <h4>Модуль trace</h4>
+          <p><a href="http://www.python.org/doc/current/lib/module-trace.html">Модуль trace</a>
+ является побочным от profile модулем, который я написал чтобы проводить
+ некоторые низкоуровневые тесты.
+          Он был сильно модифицирован несколькими другими людьми с тех 
+пор, как я выпустил мой изначальный код. В Python 2.0 вы можете найти 
+trace.py в папке Tools/scripts вашего дистрибутива Python. Начиная с 
+версии 2.3 он входит в стандартную библиотеку (папка Lib). Вы можете 
+скопировать его в свою локальную директорию, выставить права на запуск и
+ запустить напрямую. Так можно получить полную трассировочную инфромацию
+ о вашем приложении:
+              </p>
+          <pre class="prettyprint"><span class="pun">%</span><span class="pln"> trace</span><span class="pun">.</span><span class="pln">py </span><span class="pun">-</span><span class="pln">t spam</span><span class="pun">.</span><span class="pln">py eggs</span></pre>
+          <p>
+          В Python 2.4 запустить его проще — используйте команду python 
+-m trace.
+          Для модуля не существует отдельной документации, но вы можете 
+выполнить команду «pydoc trace» чтобы увидеть внутреннюю документацию.
+              </p>
+          <h4>Визуализация результатов профилирования</h4>
+          <p><a href="http://www.vrplumber.com/programming/runsnakerun/">RunSnakeRun</a>
+ — GUI утилита от Mike Fletcher'a, которая визуализирует результаты 
+cProfile используя квадратные карты. Вызовы функций и методов могут быть
+ отсортированы по различным критериям, исходный код может отображаться 
+рядом с визуализацией и статистикой вызовов.
+
+          Пример использования:</p>
+          <pre class="prettyprint"><span class="pln">runsnake some_profile_dump</span><span class="pun">.</span><span class="pln">prof</span></pre>
+          <p>
+          <a href="http://code.google.com/p/jrfonseca/wiki/Gprof2Dot">Gpof2Dot</a>
+ — утилита, базирующаяся на Python, которая может преобразовывать 
+результаты профилирования в виде графиков, которые могут быть сохранены 
+как PNG или SVG изображения.
+          Типичная сессия профилирования в Python 2.5 выглядит следующим
+ образом (в более старых версиях вам понадобиться использовать сам 
+скрипт, вместо опции -m):
+                </p>
+          <pre class="prettyprint"><span class="pln">python </span><span class="pun">-</span><span class="pln">m cProfile </span><span class="pun">-</span><span class="pln">o stat</span><span class="pun">.</span><span class="pln">prof MYSCRIPY</span><span class="pun">.</span><span class="pln">PY </span><span class="pun">[</span><span class="pln">ARGS</span><span class="pun">...]</span><span class="pln">
+python </span><span class="pun">-</span><span class="pln">m pbp</span><span class="pun">.</span><span class="pln">scripts</span><span class="pun">.</span><span class="pln">gprof2dot </span><span class="pun">-</span><span class="pln">f pstats </span><span class="pun">-</span><span class="pln">o stat</span><span class="pun">.</span><span class="pln">dot stat</span><span class="pun">.</span><span class="pln">prof
+dot </span><span class="pun">-</span><span class="pln">ostat</span><span class="pun">.</span><span class="pln">png </span><span class="pun">-</span><span class="typ">Tpng</span><span class="pln"> stat</span><span class="pun">.</span><span class="pln">dot</span></pre>
+          <p>
+          <a href="http://pycallgraph.slowchop.com/">PyCallGraph</a> — 
+модуль Python, который создает графики вызовов для Python приложений. Он
+ генерирует PNG файл, отображающий вызовы функций и их связи с другими 
+вызовами функций, количество вызовов функций и время их исполнения.
+          Пример использования:
+            </p>
+          <pre class="prettyprint"><span class="pln">pycallgraph scriptname</span><span class="pun">.</span><span class="pln">py</span></pre>
+
+      </div>
+
+</div></div></body></html>

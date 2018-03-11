@@ -1,0 +1,16 @@
+
+Создание подпроцесса
+=====================================
+import subprocess
+subprocess.call(["afplay","music_file.mp3"])
+
+
+# Музыкальный проигрыватель в pyglet
+=====================================
+player = pyglet.media.Player()
+sound = pyglet.media.load('lines.mp3')
+player.queue(sound) 
+
+# keep playing for as long as the app is running (or you tell it to stop):
+player.eos_action = pyglet.media.Player.EOS_LOOP 
+player.play()

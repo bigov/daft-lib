@@ -1,0 +1,64 @@
+
+Для того, чтобы исполняемый файл приложения находил библиотечные модули из
+подкаталогов, а не из папки запуска, в Linux при компиляции GCC указывается
+ключ для линковщика: Wl,-rpath,DIR_NAME.
+
+В операционной системе MS-Windows этот прием не работает, поэтому тут
+необходимо создать три файла, скомпилировать их при помощи утилиты "windres"
+в объектный файл и слинковать с приложением.
+
+Вкратце технология выглядит следующим образом. В исполняемый файл приложения
+внедряется манифест-файл, который предписывает приложению использовать
+некоторую сборку. Загрузчик исполняемых файлов читает этот манифест и ищет
+каталог со сборкой, причём среди путей поиска присутствует и каталог с
+исполняемым файлом приложения.
+
+Например, для размещения файлов библиотек в папке "applibs"
+
+1. Файл "applibs.manifest" в папке "applibs":
+
+```
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+    <assemblyIdentity name="applibs" version="1.0.0.0" type="win32" />
+    <file name="libd1.dll" />
+    <file name="libd2.dll" />
+</assembly>
+
+```
+
+2. Файл "manifest.xml" в корне:
+
+```
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+    <dependency>
+        <dependentAssembly>
+            <assemblyIdentity type="win32" name="addlibs" version="1.0.0.0" language="*" />
+        </dependentAssembly>
+    </dependency>
+</assembly>
+
+```
+
+3. Файл ресурсов "main.rc"
+
+```
+#include <windows.h>
+
+CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST "manifest.xml"
+
+```
+
+Это преобразуется в объектный файл командой:
+
+  windres -i main.rc -o res.o
+
+И компилируется как обычно в исполняемый файл:
+
+gcc main.cpp res.o -ld1 -ld2 -Lapplibs -o myapp.exe
+
+В результате приложение будет искать библиотеки в папке "applibs"
+
+---
+Источник информации: https://ru.stackoverflow.com/questions/620894/Динамическая-компоновка
+  https://ru.stackoverflow.com/questions/620894/Размещение-файлов-библиотек-в-подкаталоге

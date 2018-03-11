@@ -1,0 +1,12 @@
+LDLIBS=-lm -lfreeglut -lGLEW -lGL -lfreetype
+
+CXXFLAGS=${INCLUDE} -I\usr\include\freetype2
+LDLIBS=-LF:\cDev\MyProjects\TrickRig\deps\libs
+
+all: text
+
+clean:
+	rm -f *.o text
+
+text: ../common/shader_utils.o
+.PHONY: all clean

@@ -1,4 +1,12 @@
+_dbg_
 bin
 *.dll
 *.exe
 *.o
+*~
+*.swp
+tags
+*.so
+*.so.*
+*.pyc
+.back
