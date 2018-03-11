@@ -1,0 +1,18 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+app_logger	.\tst0.cpp	/^	void app_logger(void *userdata,	int	category,$/;"	f	namespace:my	signature:(void *userdata, int category, SDL_LogPriority priority, const char *message)
+check_messages	.\tst0.cpp	/^	void check_messages(void) {$/;"	f	namespace:my	signature:(void)
+env.cmd	.\env.cmd	1;"	F
+main	.\tst0.cpp	/^int main(int argc, char* argv[])$/;"	f	signature:(int argc, char* argv[])
+my	.\tst0.cpp	/^namespace my {$/;"	n	file:
+my::app_logger	.\tst0.cpp	/^	void app_logger(void *userdata,	int	category,$/;"	f	namespace:my	signature:(void *userdata, int category, SDL_LogPriority priority, const char *message)
+my::check_messages	.\tst0.cpp	/^	void check_messages(void) {$/;"	f	namespace:my	signature:(void)
+my::pop	.\tst0.cpp	/^	int pop(const char* message)$/;"	f	namespace:my	signature:(const char* message)
+my::tests	.\tst0.cpp	/^	int tests(void)$/;"	f	namespace:my	signature:(void)
+pop	.\tst0.cpp	/^	int pop(const char* message)$/;"	f	namespace:my	signature:(const char* message)
+tests	.\tst0.cpp	/^	int tests(void)$/;"	f	namespace:my	signature:(void)
+tst0.cpp	.\tst0.cpp	1;"	F

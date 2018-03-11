@@ -1,0 +1,33 @@
+# Дополнительные опции для компилятора
+# (https://gcc.gnu.org/projects/cxx0x.html):
+#  или	-std=gnu++0x
+#  или	-std=gnu++11
+#  или	-std=c++11
+
+APP=/mnt/sda6/files/cDev/debug/trickrig/apptr
+
+CPPFN=$(wildcard cpp/*.cpp)
+NAMES=$(CPPFN:.cpp=)
+# Имена всех объектных файлов для линковки
+OBJFN=$(NAMES:=.o)
+
+EXTRA_CFLAGS=-Wall -DNIX_OS_TYPE -std=c++11
+CPPFLAGS=$(shell sdl2-config --cflags) $(EXTRA_CFLAGS)
+
+EXTRA_LDLIBS=-lGL -lm
+LDLIBS=$(shell sdl2-config --libs) -lSDL2_image -lSDL2_ttf $(EXTRA_LDLIBS)
+
+all: main move
+
+main: $(OBJFN)
+
+move: 
+	@mv main $(APP)
+
+#@$(APP)
+
+clean:
+	rm -f $(APP)
+	rm -f cpp/*.o
+
+.PHONY: all clean

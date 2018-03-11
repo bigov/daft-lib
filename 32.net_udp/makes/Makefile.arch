@@ -1,0 +1,21 @@
+GCC=g++
+
+CPPFLAGS=-std=c++11 -Werror -Wall -Wextra -Wpedantic -Weffc++ \
+	-Woverloaded-virtual -Wctor-dtor-privacy -Wnon-virtual-dtor \
+	-Wconversion -Wsign-conversion -Winit-self -Wunreachable-code
+
+# TODO: add
+#	-Wold-style-cast 
+
+LDLIBS=-lpthread
+
+all: client_udp server_udp
+
+client_udp: sock.o
+server_udp: sock.o
+
+clean:
+	rm -f sock.o
+	rm -f client_udp
+	rm -f server_udp
+

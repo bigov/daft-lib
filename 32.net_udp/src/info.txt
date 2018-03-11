@@ -1,0 +1,4 @@
+
+По статье http://gafferongames.com/networking-for-game-programmers/udp-vs-tcp/
+переведенной на Хабрахабре:
+	https://habrahabr.ru/post/209524/

@@ -1,0 +1,13 @@
+USR=c:/mingw/i686-w64-mingw32
+
+CPPFLAGS=-I$(USR)/include/SDL2 -D_REENTRANT -I$(USR)/include/freetype2
+LDLIBS=-lfreetype -Wl,-subsystem,windows -lmingw32 -lSDL2main -lSDL2 -lopengl32
+
+all: text
+
+clean:
+	rm -f *.o text
+
+text: gl_com_4_5.o shader_utils.o
+
+.PHONY: all clean

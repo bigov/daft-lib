@@ -1,0 +1,10 @@
+#version 130
+
+in vec2 f_texcoord;
+out vec4 FragColor;
+uniform sampler2D mytexture;
+
+void main(void) {
+  vec2 flipped_texcoord = vec2(f_texcoord.x, 1.0 - f_texcoord.y);
+  FragColor = texture2D(mytexture, flipped_texcoord);
+}

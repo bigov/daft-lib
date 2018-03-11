@@ -1,0 +1,23 @@
+GCC=g++
+
+APP_DEFS=-D_WIN32
+MS_WIN_LIBS=-lwsock32
+
+CPPFLAGS=-std=c++11 -Werror -Wall -Wextra -Wpedantic -Weffc++ \
+	-Woverloaded-virtual -Wctor-dtor-privacy -Wnon-virtual-dtor \
+	-Wconversion -Wsign-conversion -Winit-self -Wunreachable-code $(APP_DEFS)
+
+# TODO: add
+#	-Wold-style-cast 
+
+LDLIBS=-lpthread $(MS_WIN_LIBS)
+
+all: client_udp server_udp
+
+clean:
+	del /F /Q *.o
+	del /F /Q *.exe
+
+server_udp: sock.o
+client_udp: sock.o
+

@@ -1,0 +1,7 @@
+c++ -I/usr/include/SDL2 -D_REENTRANT -c -Wall -DNIX_OS_TYPE -std=c++11 -o ext/gl_core_3_0.o ext/gl_core_3_0.cpp
+c++ -I/usr/include/SDL2 -D_REENTRANT -c -Wall -DNIX_OS_TYPE -std=c++11 -o appmain.o appmain.cpp 
+c++ -I/usr/include/SDL2 -D_REENTRANT -c -Wall -DNIX_OS_TYPE -std=c++11 -o shader_tr.o shader_tr.cpp 
+rm -f /home/ib/files/cDev/TrickRig/execs/apptrick
+c++ -L/usr/lib -lSDL2 -lpthread -lSDL2_image -lGL -lm -o /home/ib/files/cDev/TrickRig/execs/apptrick appmain.o shader_tr.o ext/gl_core_3_0.o
+/home/ib/files/cDev/TrickRig/execs/apptrick
+rm -f *.o ext/*.o

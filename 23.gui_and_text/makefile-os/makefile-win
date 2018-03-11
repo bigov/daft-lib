@@ -1,0 +1,17 @@
+# Makefile for glfont
+
+MGW_INC=c:/mingw/i686-w64-mingw32/include
+CPPFLAGS=-I$(MGW_INC)/SDL2 -D_REENTRANT -Wl,-subsystem,windows
+LDLIBS=-lmingw32 -lSDL2main -lSDL2 -lSDL2_ttf -lopengl32 -mwindows
+
+all: gltext move
+
+gltext: gl_com_4_5.o shader_utils.o
+
+move:
+	move /Y gltext.exe bin\gltext.exe
+
+clean:
+	DEL /Q *.o text
+
+.PHONY: all clean

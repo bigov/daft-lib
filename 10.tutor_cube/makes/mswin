@@ -1,0 +1,59 @@
+#
+# Для получения сообщений отладки необходимо консольное (ДОС)
+# окно. Оно будет каждый раз открываться фоном за окном графического
+# приложения. Если его надо скрыть, то в конец строки подключения библиотек
+# добавляется параметр -mwindows:
+#
+# LDLIBS = -L$(MINGW)\lib -lmingw32 -lSDL2main -lSDL2 -lopengl32 -mwindows
+#
+
+APP = f:\cDev\TrickRig\exes\apprig.exe
+CC = c++
+
+GL_CORE = ext\gl_core_3_0
+
+# Дополнительные опции для компилятора
+# (https://gcc.gnu.org/projects/cxx0x.html):
+#  или	-std=gnu++0x
+#  или	-std=gnu++11
+#  или	-std=c++11
+
+CFNAMES = shader_tr.cpp appmain.cpp
+NAMES = $(CFNAMES:.cpp=)
+
+# Имена всех объектных файлов для линковки
+OFNAMES = $(GL_CORE).o $(CFNAMES:.cpp=.o)
+
+
+MINGW = f:\cDev\mingw32\i686-w64-mingw32
+
+INC = -I$(MINGW)\include\SDL2
+LIB = -L$(MINGW)\lib
+
+C_FL = -Wl,-subsystem,windows -std=c++11
+#L_FL = -s -fopenmp -lgdi32 -lmingw32 -lSDL2main -lSDL2 -lopengl32
+L_FL = -lmingw32 -lSDL2main -lSDL2 -lopengl32
+
+all: ext_obj $(NAMES) Link rm_obj
+
+# Компиляция объектных файлов библиотеки
+ext_obj:
+	$(CC) $(GL_CORE).cpp $(INC) $(C_FL) -c -o $(GL_CORE).o
+
+# Компиляция объектных файлов проекта
+$(NAMES):
+	$(CC) $@.cpp $(INC) $(C_FL) -c -o $@.o $<
+
+# Сборка и тестовый запуск проекта
+Link:
+	$(CC) $(OFNAMES) $(LIB) $(L_FL) -o $(APP)
+
+clean: rm_obj rm_bin
+
+rm_obj:
+	DEL /F /Q /S *.o
+
+rm_bin:
+	DEL /Q $(APP)
+
+.PHONY: all clean

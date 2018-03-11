@@ -1,0 +1,11 @@
+CPPFLAGS=-I/usr/include/SDL2 -D_REENTRANT
+LDLIBS=-lSDL2 -lSDL2_ttf -lGL
+
+all: gltext move
+
+gltext: gl_com_4_5.o shader_utils.o
+
+move:
+	mv gltext bin/
+
+.PHONY: all
