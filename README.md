@@ -1,2 +1,5 @@
 # daft-lib
-Souce code mix  from testing, learning, samples and demo
+Source code mix  from testing, learning, samples and demo
+
+# Коллекция черновиков
+Сборник небольших фрагментов файлов исходного кода, на которых изучались и тестировались различные неясные моменты работы при изучении языка программирования и написании более серьезного кода.
