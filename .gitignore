@@ -1,4 +1,7 @@
+_bin_
 _dbg_
+CMakeLists.txt.user
+CMakeLists.txt.user.*
 bin
 *.dll
 *.exe

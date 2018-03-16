@@ -1,6 +1,8 @@
-//#include <ncursesw/ncurses.h>
+#if defined(_WIN32)
 #include <ncursesw/panel.h>
-//#include <iostream>
+#else
+#include <panel.h>
+#endif
 
 enum SCREEN_AREAS {
   STATUS_AREA,
