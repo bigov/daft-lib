@@ -34,4 +34,4 @@ file( GLOB CPPSRC "trcons.cpp" )
 SET( CMAKE_CXX_FLAGS "-Wall" )
 
 add_executable( trcons ${CPPSRC} )
-target_link_libraries( trcons panelw ncursesw )
+target_link_libraries( trcons ncursesw )
