@@ -43,7 +43,8 @@ int main()
 		try {
 			std::unique_ptr<short[]> space{new short[V_V]};
 			//std::valarray<short> space(V_V);
-			if (found = step_setup())
+			found = step_setup();
+			if (found)
 			{
 				cout << V_V << ": array created on " << &space[0] << endl;
 				//cout << space.size() << ": valarray size " << endl;

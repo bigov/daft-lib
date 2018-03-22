@@ -24,8 +24,9 @@ int main()
   noecho();
   curs_set(0);    // спрятать курсор
 
-  int cons_w, cons_h;
-  getmaxyx(stdscr,  cons_h, cons_w);
+  int cons_w, // ширина консольного окна
+      cons_h; // высота консольного окна
+  getmaxyx(stdscr,  cons_h, cons_w); // получить значения
 
   // создаем три окна:
   // 1. Высотой 1 строка - индикатор состояния подключения/сервиса
