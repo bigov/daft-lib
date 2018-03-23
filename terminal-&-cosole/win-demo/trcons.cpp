@@ -1,19 +1,12 @@
-#if defined(_WIN32)
-//#include <ncursesw/panel.h>
-#include <ncursesw/ncurses.h>
-#else
-//#include <panel.h>
 #include <ncurses.h>
-#endif
 
 //## Создание прямоугольной области с заданными параметрами
-WINDOW *create_window(int, int, int, int);
+WINDOW * create_window(int, int, int, int);
 
 //## Точка входа
 int main()
 {
   initscr(); // инициализация ncurses
-  
   if(!has_colors())
   {
     endwin();
@@ -21,12 +14,15 @@ int main()
     return 1;
   }
 
-  start_color();
-  use_default_colors();
+  //start_color();
+  //use_default_colors();
+  //init_pair(1, COLOR_BLUE, COLOR_GREEN);
+
   cbreak();  // Line buffering disabled, Pass on everty thing to me
   keypad(stdscr, TRUE); // возможность использовать функциональные кл.
   noecho();
   curs_set(0);          // спрятать курсор
+  refresh();
 
   int console_width;                               // ширина консольного окна
   int console_height;                              // высота консольного окна
@@ -34,11 +30,16 @@ int main()
 
   int height, width, top, left;
 
-  height = 3; width = console_width; top = 0; left = 0;
-  WINDOW *win_AREA_STATUS = create_window(height, width, top, left);
-  wprintw( win_AREA_STATUS, "%s", "SERVER STATUS: ");
-  wrefresh( win_AREA_STATUS );
+  height = 3;
+  width = console_width;
+  top = 0;
+  left = 0;
 
+  WINDOW * win_AREA_STATUS = create_window(height, width, top, left);
+  wbkgd(win_AREA_STATUS, A_REVERSE);
+  wborder(win_AREA_STATUS, ' ', ' ', '-',' ',' ',' ',' ',' ');
+  mvwprintw( win_AREA_STATUS, 0, width - 18, "%s", " SERVER STATUS ");
+  wrefresh( win_AREA_STATUS );
   refresh();
 
   //DEBUG
@@ -51,7 +52,7 @@ int main()
 //## Создание прямоугольной области с заданными параметрами
 WINDOW * create_window(int height, int width, int starty, int startx)
 {
-  WINDOW * win = newwin( height, width, starty, startx);
+  WINDOW * win = newwin( height, width, starty, startx );
   //box(win, 0, 0);
   wrefresh(win);
   return win;

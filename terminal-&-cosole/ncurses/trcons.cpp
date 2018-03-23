@@ -1,84 +1,63 @@
+#include <ctime>
+
 #if defined(_WIN32)
-//#include <ncursesw/panel.h>
-#include <ncursesw/ncurses.h>
+  #include <ncursesw/ncurses.h>
 #else
-//#include <panel.h>
-#include <ncurses.h>
+  #include <ncurses.h>
 #endif
 
-enum SCREEN_AREAS {
-  AREA_STATUS,
-  AREA_INFORM,
-  AREA_COMMAND,
-  COUNT_OF_AREAS
-};
+const int time_buf_size = 20;
+char time_buf_format[] = "%Y-%m-%d %R:%S";
 
-//## Создание прямоугольной области с заданными параметрами
-WINDOW * create_window(int, int, int, int);
+//## Записывает отметку времени в виде строки в буфер
+void get_time_string(char * buffer)
+{
+  time_t rawtime;
+  struct tm * timeinfo;
+  time (&rawtime);
+  timeinfo = localtime (&rawtime);
+  strftime(buffer, time_buf_size, time_buf_format, timeinfo);
+  return;
+}
 
 //## Точка входа
 int main()
 {
-  initscr(); // инициализация ncurses
-  if(!has_colors()) {
-    endwin();
-    printf("Your terminal does not support color\n");
-    return 0;
-  }
-  start_color();
-  use_default_colors();
+  char time_row [time_buf_size];
+  get_time_string(time_row);
 
+  initscr(); // инициализация ncurses
   cbreak();  // Line buffering disabled, Pass on everty thing to me
   keypad(stdscr, TRUE); // возможность использовать функциональные кл.
-  noecho();
-  curs_set(0);          // спрятать курсор
+  //noecho();
+  refresh();
 
-  int console_width,                        // ширина консольного окна
-      console_height;                        // высота консольного окна
-  getmaxyx(stdscr,  console_height, console_width); // получить значения
+  // получить размеры консольного окна
+  int console_width, console_height;
+  getmaxyx(stdscr, console_height, console_width);
 
-  // создаем три окна:
-  // 1. Высотой 1 строка - индикатор состояния подключения/сервиса
-  // 2. Все остальное пространство - журнал событий
-  // 3. Высотой 1 строка - для ввода команд
+  WINDOW * winLog = newwin( console_height - 4, console_width, 0, 0);
+  scrollok( winLog, TRUE);
+  wbkgd( winLog, A_REVERSE);
 
-  WINDOW * win[COUNT_OF_AREAS];
-  int height, width, top, left;
+  wprintw( winLog, time_row);
+  wprintw( winLog, "  Start server\n");
+  wrefresh( winLog );
 
-  height = 3; width = console_width; top = 0; left = 0;
-  WINDOW *win_AREA_STATUS = create_window(height, width, top, left);
-  mvwprintw( win_AREA_STATUS, 1, 2, "%s", "SERVER STATUS: ");
-  wrefresh( win_AREA_STATUS );
+  mvwprintw( stdscr, console_height - 4, console_width - 20,
+             "%s", "server status: RUN");
+  refresh();
 
-  height = console_height - 6;
-  top = 3;
-  win[AREA_INFORM] = create_window(height, width, top, left);
-  mvwprintw( win[AREA_INFORM], 1, 2, "%s", "STATUS_AREA");
-  wrefresh(win[AREA_INFORM]);
+  wprintw( winLog, time_row);
+  wprintw( winLog, "  Server now runing\n");
+  wrefresh( winLog );
 
-  height = 3;
-  top = console_height - 3;
-  win[AREA_COMMAND] = create_window(height, width, top, left);
-  mvwprintw( win[AREA_COMMAND], 1, 2, "%s", "command: ");
-  wrefresh(win[AREA_COMMAND]);
-
-  //refresh();
-  //doupdate();
+  mvwprintw( stdscr, console_height - 2, 2, "%s", "command: ");
+  refresh();
 
   //DEBUG
   getch();
 
   endwin(); // освободить память ncurses
   return 0; //EXIT_SUCCESS;
-}
-
-//## Создание прямоугольной области с заданными параметрами
-WINDOW * create_window(int height, int width, int starty, int startx)
-{
-  WINDOW * win = newwin( height, width, starty, startx);
-  //new_panel(win);
-  box(win, 0, 0);
-  wrefresh(win);
-  //update_panels();
-  return win;
 }

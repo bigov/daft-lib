@@ -1,16 +1,19 @@
 #
-# Makefile for
+# Makefile
 #
 
-all: win color trcons
+all: win-cpp win-c color trcons
 
-win:
-	$(CC) win-demo.c -lncursesw -o win-demo
+win-cpp:
+	$(CC) win-demo.cpp -lncursesw -o win-cpp
+
+win-c:
+	$(CC) win-demo.c -lncursesw -o win-c
 
 color:
-	$(CC) color-demo.c -lncursesw -o color-demo
+	$(CC) color-demo.c -lncursesw -o color
 
 trcons:
 	$(CC) trcons.cpp -lncursesw -o trcons
 
-.PHONY: all win color trcons
+.PHONY: all win-cpp win-c color trcons
