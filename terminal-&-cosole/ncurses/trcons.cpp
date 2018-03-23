@@ -30,29 +30,30 @@ int main()
   cbreak();  // Line buffering disabled, Pass on everty thing to me
   keypad(stdscr, TRUE); // возможность использовать функциональные кл.
   //noecho();
+  wbkgd( stdscr, A_REVERSE );
   refresh();
 
   // получить размеры консольного окна
   int console_width, console_height;
-  getmaxyx(stdscr, console_height, console_width);
+  getmaxyx( stdscr, console_height, console_width );
 
-  WINDOW * winLog = newwin( console_height - 4, console_width, 0, 0);
-  scrollok( winLog, TRUE);
-  wbkgd( winLog, A_REVERSE);
+  WINDOW * winLog = newwin( console_height - 4, console_width, 0, 0 );
+  scrollok( winLog, TRUE );
+  //wbkgd( winLog, A_REVERSE );
 
-  wprintw( winLog, time_row);
-  wprintw( winLog, "  Start server\n");
+  wprintw( winLog, time_row );
+  wprintw( winLog, "  Start server\n" );
   wrefresh( winLog );
 
   mvwprintw( stdscr, console_height - 4, console_width - 20,
-             "%s", "server status: RUN");
+             "%s", "server status: RUN" );
   refresh();
 
-  wprintw( winLog, time_row);
-  wprintw( winLog, "  Server now runing\n");
+  wprintw( winLog, time_row );
+  wprintw( winLog, "  Server now runing\n" );
   wrefresh( winLog );
 
-  mvwprintw( stdscr, console_height - 2, 2, "%s", "command: ");
+  mvwprintw( stdscr, console_height - 2, 2, "%s", "command: " );
   refresh();
 
   //DEBUG
