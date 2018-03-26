@@ -77,115 +77,6 @@ namespace tr {
      return;
   }
 
-  //## установить клиентское подключение к серверу
-  //
-  // char* srv_name      - имя хоста
-  // enet_uint32 cl_data - число, принимаемое сервером как "event.data"
-  //
-  void enetw::open_connection(char* srv_name, enet_uint32 cl_data)
-  {
-    char buf[128];
-    enet_address_set_host( &address, srv_name );
-
-    nethost = enet_host_create( nullptr, cl_conns, cl_channels, in_bw, out_bw );
-    if(nullptr == nethost)
-    {
-      print_log("Can't create ENet host-client");
-      return;
-    }
-
-    cl_peer = enet_host_connect( nethost, &address, cl_channels, cl_data );
-    if( nullptr == cl_peer )
-    {
-      print_log("Can't create ENet peer connection");
-      enet_host_destroy(nethost);
-      nethost = nullptr;
-      return;
-    }
-
-    // ожидание подтверждения c сервера
-    ENetEvent event = {};
-    if(( enet_host_service( nethost, &event, 1000 ) > 0 )
-      && ( event.type == ENET_EVENT_TYPE_CONNECT ))
-    {
-      sprintf(buf, "Connection to the %s:%d complete", srv_name, address.port);
-      print_log(buf);
-    } else
-    {
-      sprintf(buf, "Can't connect to the %s:%d", srv_name, address.port);
-      print_log(buf);
-      enet_peer_reset( cl_peer );
-      cl_peer = nullptr;
-      enet_host_destroy(nethost);
-      nethost = nullptr;
-    }
-    return;
-  }
-
-  //## Цикл работы клиента
-  int enetw::connect(char* srv_name, enet_uint32 cl_data)
-  {
-    open_connection(srv_name, cl_data);
-    bool run_control = true;
-    mvwprintw( stdscr, console_height - 2, 2, "%s", "client: " );
-    refresh();
-
-    int ch;
-    std::string cmd = {};
-    while (run_control)
-    {
-      if(nullptr != cl_peer) check_events(50);
-      ch = getch();
-      if(ch == KEY_F(10)) run_control = false;
-      while(ch > -1)
-      {
-        if((ch == '\n') || (ch == '\r'))
-        {
-          if(cmd.size() > 0) print_log(cmd.c_str());
-          cmd.clear();
-          mvwprintw( stdscr, console_height - 2, 0, "%s", CleanCmdLine.data());
-          mvwprintw( stdscr, console_height - 1, 0, "%s", CleanCmdLine.data());
-          mvwprintw( stdscr, console_height - 2, 2, "%s", "client: " );
-          refresh();
-        } else
-        {
-          cmd.push_back(ch);
-        }
-        ch = getch();
-        if(ch == KEY_F(10)) run_control = false;
-      }
-    }
-
-    if(nullptr != cl_peer) disconnect();
-    return EXIT_SUCCESS;
-  }
-
-  //## Отключиться от сервера
-  void enetw::disconnect(void)
-  {
-    ENetEvent event;
-    enet_peer_disconnect( cl_peer, 0);
-    int timeout = 200;
-    while( enet_host_service( nethost, &event, timeout ) > 0 )
-    {
-      switch( event.type )
-      {
-        case ENET_EVENT_TYPE_RECEIVE:
-          // все входящие пакеты отбрасываем
-          enet_packet_destroy( event.packet );
-          break;
-        case ENET_EVENT_TYPE_DISCONNECT:
-          return;
-        default:
-          break;
-      }
-    }
-    // если подтверждение не было получено, то соединение сбрасывается
-    enet_peer_reset( cl_peer );
-    print_log("Connection was reset by timeout.");
-    return;
-  }
-
   //## Передача команды из клиентского соединения
   void enetw::send_data(std::vector<enet_uint8>& PostData )
   {
@@ -301,8 +192,51 @@ namespace tr {
     return;
   }
 
+  //## Обработчик команд, введенных с клавиатуры
+  void enetw::accept_cmd(char prompt[])
+  {
+    print_log(cmd_buffer.c_str());
+    cmd_buffer.clear();
+    mvwprintw( stdscr, console_height - 2, 0, "%s", CleanCmdLine.data());
+    mvwprintw( stdscr, console_height - 1, 0, "%s", CleanCmdLine.data());
+    mvwprintw( stdscr, console_height - 2, 2, "%s", prompt );
+    refresh();
+    return;
+  }
+
+  //## Опрос нажатий клавиатуры
+  void enetw::check_keyboard(char prompt[])
+  {
+    int key;
+    while((key = getch()) > -1)
+    {
+      if(key == KEY_F(10))
+      {
+        online = false;
+      }
+      else if(key == KEY_UP)
+      {
+        print_log("up");
+        // восстановить курсор
+        mvwprintw( stdscr, console_height - 2, 2, "%s", prompt );
+      }
+      else if((key == '\n') || (key == '\r'))
+      {
+        // если буфере есть набранная команда, то выполнить ее
+        if(cmd_buffer.size() > 0) accept_cmd(prompt);
+        // если буфер команды пустой, то только восстановить курсор
+        else mvwprintw( stdscr, console_height - 2, 2, "%s", prompt );
+      }
+      else
+      {
+        cmd_buffer.push_back(key);
+      }
+    }
+    return;
+  }
+
   //## Открыть доступный порт и ожидать подключений
-  int enetw::listen(void)
+  int enetw::run_server(void)
   {
     while((nullptr == nethost) && (address.port < port_max))
     {
@@ -315,44 +249,113 @@ namespace tr {
       msgError = "An error on creating an ENet server host";
       print_log(msgError.c_str());
       return EXIT_FAILURE;
-     }
+    }
 
     char buf[40];
     sprintf(buf, "Port listen: %d", address.port);
     print_log(buf);
 
-    listen_clients = true;
-
-    mvwprintw( stdscr, console_height - 2, 2, "%s", "command: " );
+    char prompt[] = "server: ";
+    mvwprintw( stdscr, console_height - 2, 2, "%s", prompt );
     refresh();
 
-    int ch;
-    std::string cmd = {};
-    while (listen_clients)
+    while(online)
     {
       check_events(50);
-      ch = getch();
-      if(ch == KEY_F(10)) listen_clients = false;
-      while(ch > -1)
-      {
-        if((ch == '\n') || (ch == '\r'))
-        {
-          if(cmd.size() > 0) print_log(cmd.c_str());
-          cmd.clear();
-          mvwprintw( stdscr, console_height - 2, 0, "%s", CleanCmdLine.data());
-          mvwprintw( stdscr, console_height - 1, 0, "%s", CleanCmdLine.data());
-          mvwprintw( stdscr, console_height - 2, 2, "%s", "command: " );
-          refresh();
-        } else
-        {
-          cmd.push_back(ch);
-        }
-        ch = getch();
-        if(ch == KEY_F(10)) listen_clients = false;
-      }
+      check_keyboard(prompt);
     }
     //TODO: послать disconnect всем активным клиентам
     return EXIT_SUCCESS;
+  }
+
+  //## установить клиентское подключение к серверу
+  //
+  // char* srv_name      - имя хоста
+  // enet_uint32 cl_data - число, принимаемое сервером как "event.data"
+  //
+  void enetw::open_connection(char* srv_name, enet_uint32 cl_data)
+  {
+    char buf[128];
+    enet_address_set_host( &address, srv_name );
+
+    nethost = enet_host_create( nullptr, cl_conns, cl_channels, in_bw, out_bw );
+    if(nullptr == nethost)
+    {
+      print_log("Can't create ENet host-client");
+      return;
+    }
+
+    cl_peer = enet_host_connect( nethost, &address, cl_channels, cl_data );
+    if( nullptr == cl_peer )
+    {
+      print_log("Can't create ENet peer connection");
+      enet_host_destroy(nethost);
+      nethost = nullptr;
+      return;
+    }
+
+    // ожидание подтверждения c сервера
+    ENetEvent event = {};
+    if(( enet_host_service( nethost, &event, 1000 ) > 0 )
+      && ( event.type == ENET_EVENT_TYPE_CONNECT ))
+    {
+      sprintf(buf, "Connection to the %s:%d complete", srv_name, address.port);
+      print_log(buf);
+    } else
+    {
+      sprintf(buf, "Can't connect to the %s:%d", srv_name, address.port);
+      print_log(buf);
+      enet_peer_reset( cl_peer );
+      cl_peer = nullptr;
+      enet_host_destroy(nethost);
+      nethost = nullptr;
+    }
+    return;
+  }
+
+  //## Цикл работы клиента
+  int enetw::run_client(char* srv_name, enet_uint32 cl_data)
+  {
+    open_connection(srv_name, cl_data);
+
+    char prompt[] = "client: ";
+    mvwprintw( stdscr, console_height - 2, 2, "%s", prompt );
+    refresh();
+
+    while (online)
+    {
+      if(nullptr != cl_peer) check_events(50);
+      check_keyboard(prompt);
+    }
+
+    if(nullptr != cl_peer) disconnect_me();
+    return EXIT_SUCCESS;
+  }
+
+  //## Отключиться от сервера
+  void enetw::disconnect_me(void)
+  {
+    ENetEvent event;
+    enet_peer_disconnect( cl_peer, 0);
+    int timeout = 200;
+    while( enet_host_service( nethost, &event, timeout ) > 0 )
+    {
+      switch( event.type )
+      {
+        case ENET_EVENT_TYPE_RECEIVE:
+          // все входящие пакеты отбрасываем
+          enet_packet_destroy( event.packet );
+          break;
+        case ENET_EVENT_TYPE_DISCONNECT:
+          return;
+        default:
+          break;
+      }
+    }
+    // если подтверждение не было получено, то соединение сбрасывается
+    enet_peer_reset( cl_peer );
+    print_log("Connection was reset by timeout.");
+    return;
   }
 
 } //namespace tr

@@ -22,6 +22,7 @@ event.channelID          // по какому каналу
 #include <iostream>
 #include <map>
 #include <vector>
+#include <list>
 
 #include <enet/enet.h>
 
@@ -43,8 +44,8 @@ namespace tr
     CMD_ENUM_END,  // end of the list commands
   };
 
-  extern std::map<SRV_CMD, std::vector<char>> CmdMap;
-  extern int admin_key; // ключ администратора TODO: сделать вычисляемым
+  //extern std::map<SRV_CMD, std::vector<char>> CmdMap;
+  //extern int admin_key; // ключ администратора TODO: сделать вычисляемым
 
   // Записывает в строковый буфер отметку времени
   extern void get_time_string(char * buffer);
@@ -52,7 +53,11 @@ namespace tr
   class enetw
   {
   private:
-    bool listen_clients = false;
+    bool online = true;
+    std::list<std::vector<int>> cmdHistory = {}; // история команд
+    std::vector<char> CleanCmdLine = {}; // очистка командной строки
+    std::string cmd_buffer = {};
+
     ENetHost* nethost = nullptr;
     ENetAddress address = {};
 
@@ -72,13 +77,16 @@ namespace tr
 
     WINDOW * winLog = nullptr;           // окно ncurses
     int console_width, console_height;   // размеры терминального окна
-    std::vector<char> CleanCmdLine = {}; // очистка командной строки
 
     void ev_connect(ENetPeer*);
     void ev_disconnect(ENetPeer*);
     void ev_receive(ENetPeer*, ENetPacket*);
     void send_by_peer(ENetPeer*, std::vector<enet_uint8>&);
     void print_log(const char*);
+    void check_keyboard(char prompt[]);
+    void accept_cmd(char prompt[]);
+    void check_events(int timeout);
+    void open_connection(char*, enet_uint32);
 
   public:
     enetw(void);
@@ -86,12 +94,10 @@ namespace tr
 
     std::string msgError = {};
 
-    int listen(void);
-    int connect(char*, enet_uint32);
-    void open_connection(char*, enet_uint32);
-    void disconnect(void);
+    int run_server(void);
+    int run_client(char*, enet_uint32);
+    void disconnect_me(void);
     void send_data(std::vector<enet_uint8>&);
-    void check_events(int timeout);
 
   };
 

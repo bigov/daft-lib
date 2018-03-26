@@ -9,8 +9,8 @@
 int main()
 {
   char srv_name[] = "localhost";
-  tr::enetw EnetClient = {};
-  int res = EnetClient.connect(srv_name, 0);
-  if(res != EXIT_SUCCESS) std::cout << EnetClient.msgError;
+  tr::enetw Enet = {};
+  int res = Enet.run_client(srv_name, 0);
+  if(res != EXIT_SUCCESS) std::cout << Enet.msgError;
   return res;
 }
