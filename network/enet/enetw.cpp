@@ -5,6 +5,10 @@
 
 namespace tr {
 
+  const int time_buf_size = 20;
+  char time_buf_format[] = "%Y-%m-%d %R:%S";
+
+  /* !пример!
   std::map<SRV_CMD, std::vector<char>> CmdMap = {
     {CMD_HELLO, {'h','e','l','l','o'}},
     {CMD_BY, {'b','y'}},
@@ -12,9 +16,48 @@ namespace tr {
     {CMD_RELOAD, {'r','e','l','o','a','d'}},
     {CMD_RESTART, {'r','e','s','t','a','r','t'}},
   };
+  */
 
-  const int time_buf_size = 20;
-  char time_buf_format[] = "%Y-%m-%d %R:%S";
+  //## инициализация класса
+  commands::commands(void)
+  {
+    memset(cmds, '\0', history_size * cmd_max_size);
+    memset(row_size, 0, history_size);
+    return;
+  }
+
+  //## управление буфером команд / добавление символа в строку команды
+  char* commands::push(int symb)
+  {
+    if(( symb < 128 ) && (row_size[current_row] < cmd_max_size))
+    {
+      cmds[current_row][row_size[current_row]] = static_cast<char>(symb);
+      row_size[current_row] += 1;
+    }
+    return cmds[current_row];
+  }
+
+  //##текущая (верхняя) строка в списке
+  char* commands::text(void)
+  {
+    return cmds[current_row];
+  }
+
+  //## длина текущей строки
+  size_t commands::length(void)
+  {
+    return row_size[current_row];
+  }
+
+  //## переключение на следующую строку (по кругу)
+  void commands::next(void)
+  {
+    current_row += 1;
+    if(current_row == history_size) current_row = 0;
+    row_size[current_row] = 0;
+    memset(cmds[current_row], '\0', cmd_max_size);
+    return;
+  }
 
   //## Записывает в строковый буфер отметку времени
   void get_time_string(char * buffer)
@@ -195,12 +238,9 @@ namespace tr {
   //## Обработчик команд, введенных с клавиатуры
   void enetw::accept_cmd(char prompt[])
   {
-    print_log(cmd_buffer.c_str());
-    cmd_buffer.clear();
+    print_log(Cmd.text());
     mvwprintw( stdscr, console_height - 2, 0, "%s", CleanCmdLine.data());
     mvwprintw( stdscr, console_height - 1, 0, "%s", CleanCmdLine.data());
-    mvwprintw( stdscr, console_height - 2, 2, "%s", prompt );
-    refresh();
     return;
   }
 
@@ -223,13 +263,17 @@ namespace tr {
       else if((key == '\n') || (key == '\r'))
       {
         // если буфере есть набранная команда, то выполнить ее
-        if(cmd_buffer.size() > 0) accept_cmd(prompt);
-        // если буфер команды пустой, то только восстановить курсор
-        else mvwprintw( stdscr, console_height - 2, 2, "%s", prompt );
+        if(Cmd.length() > 0)
+        {
+          accept_cmd(prompt);
+          Cmd.next();
+        }
+        mvwprintw( stdscr, console_height - 2, 2, "%s", prompt );
+        //refresh();
       }
       else
       {
-        cmd_buffer.push_back(key);
+        Cmd.push(key);
       }
     }
     return;

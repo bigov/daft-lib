@@ -34,6 +34,7 @@ event.channelID          // по какому каналу
 
 namespace tr
 {
+  /* карта кодов команд для передачи по сети !пример!
   enum SRV_CMD {
     CMD_ZERO,      // нуль не используется как команда
     CMD_HELLO,     // control me
@@ -43,20 +44,38 @@ namespace tr
     CMD_RESTART,   // restart server
     CMD_ENUM_END,  // end of the list commands
   };
-
-  //extern std::map<SRV_CMD, std::vector<char>> CmdMap;
-  //extern int admin_key; // ключ администратора TODO: сделать вычисляемым
+  extern std::map<SRV_CMD, std::vector<char>> CmdMap;
+  */
 
   // Записывает в строковый буфер отметку времени
   extern void get_time_string(char * buffer);
 
+  ///### Управление буфером команд
+  class commands
+  {
+    public:
+      commands(void);
+
+      char* push(int);     // добавление символа в строку команды
+      char* text(void);    // текущая (верхняя) строка в списке
+      size_t length(void); // длина текущей строки
+      void next(void);
+
+    private:
+      static const size_t cmd_max_size = 128; // предел длины команды
+      static const size_t history_size = 8;  // длина истории команд
+      char cmds[history_size][cmd_max_size];  // Массив строк команд
+      size_t row_size[history_size];          // массив длин строк
+      size_t current_row = 0;                 // текущая строка
+  };
+
+  ///### Обертка к enet
   class enetw
   {
   private:
     bool online = true;
-    std::list<std::vector<int>> cmdHistory = {}; // история команд
     std::vector<char> CleanCmdLine = {}; // очистка командной строки
-    std::string cmd_buffer = {};
+    tr::commands Cmd = {};
 
     ENetHost* nethost = nullptr;
     ENetAddress address = {};
