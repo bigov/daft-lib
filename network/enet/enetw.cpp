@@ -21,9 +21,8 @@ namespace tr {
   //## инициализация класса
   commands::commands(void)
   {
-    std::vector<char> cmd = prompt;
-    hist.insert(hist.begin(), cmd);
-    cursor = cmd.size();
+    CmdRow = prompt;
+    cursor = CmdRow.size();
     return;
   }
 
@@ -32,7 +31,7 @@ namespace tr {
   {
     if((key == '\n') || (key == '\r'))
     {
-      if(hist[current_idx].size() == prompt.size()) return 0;
+      if( CmdRow.size() == prompt.size() ) return 0;
       next();
       return 1;
     }
@@ -50,40 +49,31 @@ namespace tr {
     }
     else if((key == KEY_BACKSPACE) || (key == KEY_BACKSPACE_M))
     {
-      if(hist[current_idx].size() == prompt.size()) return 0;
-      hist[current_idx].pop_back();
-      cursor = hist[current_idx].size();
+      if(hist[current_idx].size() > prompt.size())
+      {
+        auto& v = hist[current_idx];
+        v.pop_back();
+        cursor = v.size();
+      }
     }
-    else if(( key < 128 ) && (hist[current_idx].size() < cmd_max_size))
+    else if(( key < 128 ) && (CmdRow.size() < cmd_max_size))
     {
-      hist[current_idx].push_back(static_cast<char>(key));
-      cursor = hist[current_idx].size();
+      CmdRow += static_cast<char>(key);
+      cursor = CmdRow.size();
     }
     return 0;
   }
 
   //## Заполняет символами буфер текущей команды для вывода на экран
-  void commands::text(std::vector<char>& cmd)
+  const char* commands::text()
   {
-    size_t cmd_size = cmd.size(); //
-    cmd.clear();                  // заполнение строки команды пробелами
-    cmd.resize(cmd_size, ' ');    //
-
-    auto& v = hist[current_idx];
-    size_t limit = std::min(cmd_size, v.size());
-
-    for(int i = 0; i < limit; ++i)
-    {
-      cmd[i] = v[i];
-    }
-    return;
+    return CmdRow.c_str();
   }
 
   //## Передает содержимое последней введенной команды
-  char* commands::late(void)
+  const char *commands::late(void)
   {
-    if(current_idx > 0) return hist[current_idx - 1].data();
-    else return nullptr;
+    return hist.back().c_str();
   }
 
   // передает позицию курсора в строке ввода
@@ -98,12 +88,14 @@ namespace tr {
     return hist[current_idx].size();
   }
 
-  //## переключение на следующую строку (по кругу)
+  //## переключение на следующую строку
   void commands::next(void)
   {
-    hist.push_back(prompt);
+    hist.push_back(CmdRow);
     current_idx = hist.size() - 1;
-    cursor = prompt.size();
+    CmdRow.clear();
+    CmdRow = prompt;
+    cursor = CmdRow.size();
     return;
   }
 
@@ -127,6 +119,7 @@ namespace tr {
     address.host = ENET_HOST_ANY;  // адрес для приема пакетов
     address.port = port_min;       // какой порт слушать
 
+    setlocale(LC_CTYPE, "");
     initscr(); // инициализация ncurses
     cbreak();  // Line buffering disabled, Pass on everty thing to me
     keypad(stdscr, TRUE); // возможность использовать функциональные кл.
@@ -144,9 +137,6 @@ namespace tr {
     winLog = newwin( console_height - 5, console_width - 4, 2, 2 );
     scrollok( winLog, TRUE );
     wrefresh( winLog );
-
-    CmdLine.resize(console_width - 2, ' ');
-    CmdLine[0] = '>';
 
     return;
   }
@@ -286,7 +276,7 @@ namespace tr {
   }
 
   //## Обработчик команд, введенных с клавиатуры
-  void enetw::accept_cmd(char* cmd)
+  void enetw::accept_cmd(const char* cmd)
   {
     print_log(cmd);
     return;
@@ -305,8 +295,8 @@ namespace tr {
       else
       {
         if(Cmd.push(key)) accept_cmd(Cmd.late());
-        Cmd.text(CmdLine);
-        mvwprintw( stdscr, console_height - 2, 1, "%s", CmdLine.data() );
+        mvwprintw( stdscr, console_height - 2, 1, "%s", Cmd.text() );
+        wmove(stdscr, console_height - 2, Cmd.cursor_x() + 1);
       }
     }
     return;
@@ -331,7 +321,7 @@ namespace tr {
     char buf[40];
     sprintf(buf, "Port listen: %d", address.port);
     print_log(buf);
-    mvwprintw( stdscr, console_height - 2, 1, "%s", CmdLine.data() );
+    mvwprintw( stdscr, console_height - 2, 1, "%s", Cmd.text() );
     wmove(stdscr, console_height - 2, 2);
 
     while(online)
@@ -392,7 +382,7 @@ namespace tr {
   int enetw::run_client(char* srv_name, enet_uint32 cl_data)
   {
     open_connection(srv_name, cl_data);
-    mvwprintw( stdscr, console_height - 2, 1, "%s", CmdLine.data() );
+    mvwprintw( stdscr, console_height - 2, 1, "%s", Cmd.text() );
 
     while (online)
     {

@@ -58,20 +58,21 @@ namespace tr
     public:
       commands(void);
 
-      std::vector<char> prompt = {'>'};
+      std::string prompt = ">";
 
-      char push(int);        // добавляет символ в строку команды
-      void text(std::vector<char>&); // данные в текущей строке истории
-      char* late(void);      // передает данные из предыдущей строки истории
-      int length(void);      // передает длину текущей строки
-      int cursor_x(void);      // передает позицию курсора в строке ввода
-      void next(void);       // переключает кэш истории команд
+      char push(int);     // добавляет символ в строку команды
+      const char* text(void);   // данные в текущей строке истории
+      const char* late(void);   // передает данные из крайней строки истории
+      int length(void);   // передает длину текущей строки
+      int cursor_x(void); // передает позицию курсора в строке ввода
+      void next(void);    // переключает кэш истории команд
 
     private:
       static const size_t cmd_max_size = 128; // ограничение длины команды
       size_t current_idx = 0;                 // индекс текущей строки в кэше
-      size_t cursor = 0;                    // позиция курсора в строке
-      std::vector<std::vector<char>> hist = {};
+      size_t cursor = 0;                      // позиция курсора в строке
+      std::vector<std::string> hist = {};     // история команд
+      std::string CmdRow = {};                // содержимое строковой команды
   };
 
   ///### Обертка к enet
@@ -79,9 +80,8 @@ namespace tr
   {
   private:
     bool online = true;
-    std::vector<char> CmdLine = {}; // содержимое строки ввода
+    //std::vector<char> CmdLine = {}; // содержимое строки ввода
     tr::commands Cmd = {};
-
     ENetHost* nethost = nullptr;
     ENetAddress address = {};
 
@@ -108,7 +108,7 @@ namespace tr
     void send_by_peer(ENetPeer*, std::vector<enet_uint8>&);
     void print_log(const char*);
     void check_keyboard(void);
-    void accept_cmd(char*);
+    void accept_cmd(const char *);
     void check_events(int timeout);
     void open_connection(char*, enet_uint32);
 
