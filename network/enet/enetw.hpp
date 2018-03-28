@@ -32,6 +32,8 @@ event.channelID          // по какому каналу
   #include <ncurses.h>
 #endif
 
+#define KEY_BACKSPACE_M 0177
+
 namespace tr
 {
   /* карта кодов команд для передачи по сети !пример!
@@ -56,17 +58,20 @@ namespace tr
     public:
       commands(void);
 
-      char* push(int);     // добавление символа в строку команды
-      char* text(void);    // текущая (верхняя) строка в списке
-      size_t length(void); // длина текущей строки
-      void next(void);
+      std::vector<char> prompt = {'>'};
+
+      char push(int);        // добавляет символ в строку команды
+      void text(std::vector<char>&); // данные в текущей строке истории
+      char* late(void);      // передает данные из предыдущей строки истории
+      int length(void);      // передает длину текущей строки
+      int cursor_x(void);      // передает позицию курсора в строке ввода
+      void next(void);       // переключает кэш истории команд
 
     private:
-      static const size_t cmd_max_size = 128; // предел длины команды
-      static const size_t history_size = 8;  // длина истории команд
-      char cmds[history_size][cmd_max_size];  // Массив строк команд
-      size_t row_size[history_size];          // массив длин строк
-      size_t current_row = 0;                 // текущая строка
+      static const size_t cmd_max_size = 128; // ограничение длины команды
+      size_t current_idx = 0;                 // индекс текущей строки в кэше
+      size_t cursor = 0;                    // позиция курсора в строке
+      std::vector<std::vector<char>> hist = {};
   };
 
   ///### Обертка к enet
@@ -74,7 +79,7 @@ namespace tr
   {
   private:
     bool online = true;
-    std::vector<char> CleanCmdLine = {}; // очистка командной строки
+    std::vector<char> CmdLine = {}; // содержимое строки ввода
     tr::commands Cmd = {};
 
     ENetHost* nethost = nullptr;
@@ -102,8 +107,8 @@ namespace tr
     void ev_receive(ENetPeer*, ENetPacket*);
     void send_by_peer(ENetPeer*, std::vector<enet_uint8>&);
     void print_log(const char*);
-    void check_keyboard(char prompt[]);
-    void accept_cmd(char prompt[]);
+    void check_keyboard(void);
+    void accept_cmd(char*);
     void check_events(int timeout);
     void open_connection(char*, enet_uint32);
 

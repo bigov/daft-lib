@@ -21,41 +21,89 @@ namespace tr {
   //## инициализация класса
   commands::commands(void)
   {
-    memset(cmds, '\0', history_size * cmd_max_size);
-    memset(row_size, 0, history_size);
+    std::vector<char> cmd = prompt;
+    hist.insert(hist.begin(), cmd);
+    cursor = cmd.size();
     return;
   }
 
   //## управление буфером команд / добавление символа в строку команды
-  char* commands::push(int symb)
+  char commands::push(int key)
   {
-    if(( symb < 128 ) && (row_size[current_row] < cmd_max_size))
+    if((key == '\n') || (key == '\r'))
     {
-      cmds[current_row][row_size[current_row]] = static_cast<char>(symb);
-      row_size[current_row] += 1;
+      if(hist[current_idx].size() == prompt.size()) return 0;
+      next();
+      return 1;
     }
-    return cmds[current_row];
+    else if(key == KEY_UP)
+    {
+      if(0 == current_idx) return 0;
+      else current_idx -= 1;
+      cursor = hist[current_idx].size();
+    }
+    else if(key == KEY_DOWN)
+    {
+      if(current_idx == hist.size() - 1) return 0;
+      else current_idx += 1;
+      cursor = hist[current_idx].size();
+    }
+    else if((key == KEY_BACKSPACE) || (key == KEY_BACKSPACE_M))
+    {
+      if(hist[current_idx].size() == prompt.size()) return 0;
+      hist[current_idx].pop_back();
+      cursor = hist[current_idx].size();
+    }
+    else if(( key < 128 ) && (hist[current_idx].size() < cmd_max_size))
+    {
+      hist[current_idx].push_back(static_cast<char>(key));
+      cursor = hist[current_idx].size();
+    }
+    return 0;
   }
 
-  //##текущая (верхняя) строка в списке
-  char* commands::text(void)
+  //## Заполняет символами буфер текущей команды для вывода на экран
+  void commands::text(std::vector<char>& cmd)
   {
-    return cmds[current_row];
+    size_t cmd_size = cmd.size(); //
+    cmd.clear();                  // заполнение строки команды пробелами
+    cmd.resize(cmd_size, ' ');    //
+
+    auto& v = hist[current_idx];
+    size_t limit = std::min(cmd_size, v.size());
+
+    for(int i = 0; i < limit; ++i)
+    {
+      cmd[i] = v[i];
+    }
+    return;
+  }
+
+  //## Передает содержимое последней введенной команды
+  char* commands::late(void)
+  {
+    if(current_idx > 0) return hist[current_idx - 1].data();
+    else return nullptr;
+  }
+
+  // передает позицию курсора в строке ввода
+  int commands::cursor_x(void)
+  {
+    return cursor;
   }
 
   //## длина текущей строки
-  size_t commands::length(void)
+  int commands::length(void)
   {
-    return row_size[current_row];
+    return hist[current_idx].size();
   }
 
   //## переключение на следующую строку (по кругу)
   void commands::next(void)
   {
-    current_row += 1;
-    if(current_row == history_size) current_row = 0;
-    row_size[current_row] = 0;
-    memset(cmds[current_row], '\0', cmd_max_size);
+    hist.push_back(prompt);
+    current_idx = hist.size() - 1;
+    cursor = prompt.size();
     return;
   }
 
@@ -83,6 +131,7 @@ namespace tr {
     cbreak();  // Line buffering disabled, Pass on everty thing to me
     keypad(stdscr, TRUE); // возможность использовать функциональные кл.
     nodelay(stdscr,TRUE); // turn off getch() wait
+    noecho();
     wbkgd( stdscr, A_REVERSE );
     addstr(" F1: help; F10: exit;");
     refresh();
@@ -96,7 +145,8 @@ namespace tr {
     scrollok( winLog, TRUE );
     wrefresh( winLog );
 
-    CleanCmdLine.resize(console_width, ' ');
+    CmdLine.resize(console_width - 2, ' ');
+    CmdLine[0] = '>';
 
     return;
   }
@@ -236,16 +286,14 @@ namespace tr {
   }
 
   //## Обработчик команд, введенных с клавиатуры
-  void enetw::accept_cmd(char prompt[])
+  void enetw::accept_cmd(char* cmd)
   {
-    print_log(Cmd.text());
-    mvwprintw( stdscr, console_height - 2, 0, "%s", CleanCmdLine.data());
-    mvwprintw( stdscr, console_height - 1, 0, "%s", CleanCmdLine.data());
+    print_log(cmd);
     return;
   }
 
   //## Опрос нажатий клавиатуры
-  void enetw::check_keyboard(char prompt[])
+  void enetw::check_keyboard(void)
   {
     int key;
     while((key = getch()) > -1)
@@ -254,26 +302,11 @@ namespace tr {
       {
         online = false;
       }
-      else if(key == KEY_UP)
-      {
-        print_log("up");
-        // восстановить курсор
-        mvwprintw( stdscr, console_height - 2, 2, "%s", prompt );
-      }
-      else if((key == '\n') || (key == '\r'))
-      {
-        // если буфере есть набранная команда, то выполнить ее
-        if(Cmd.length() > 0)
-        {
-          accept_cmd(prompt);
-          Cmd.next();
-        }
-        mvwprintw( stdscr, console_height - 2, 2, "%s", prompt );
-        //refresh();
-      }
       else
       {
-        Cmd.push(key);
+        if(Cmd.push(key)) accept_cmd(Cmd.late());
+        Cmd.text(CmdLine);
+        mvwprintw( stdscr, console_height - 2, 1, "%s", CmdLine.data() );
       }
     }
     return;
@@ -298,15 +331,13 @@ namespace tr {
     char buf[40];
     sprintf(buf, "Port listen: %d", address.port);
     print_log(buf);
-
-    char prompt[] = "server: ";
-    mvwprintw( stdscr, console_height - 2, 2, "%s", prompt );
-    refresh();
+    mvwprintw( stdscr, console_height - 2, 1, "%s", CmdLine.data() );
+    wmove(stdscr, console_height - 2, 2);
 
     while(online)
     {
       check_events(50);
-      check_keyboard(prompt);
+      check_keyboard();
     }
     //TODO: послать disconnect всем активным клиентам
     return EXIT_SUCCESS;
@@ -361,15 +392,12 @@ namespace tr {
   int enetw::run_client(char* srv_name, enet_uint32 cl_data)
   {
     open_connection(srv_name, cl_data);
-
-    char prompt[] = "client: ";
-    mvwprintw( stdscr, console_height - 2, 2, "%s", prompt );
-    refresh();
+    mvwprintw( stdscr, console_height - 2, 1, "%s", CmdLine.data() );
 
     while (online)
     {
       if(nullptr != cl_peer) check_events(50);
-      check_keyboard(prompt);
+      check_keyboard();
     }
 
     if(nullptr != cl_peer) disconnect_me();
