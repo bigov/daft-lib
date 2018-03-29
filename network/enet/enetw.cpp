@@ -21,40 +21,39 @@ namespace tr {
   //## инициализация класса
   commands::commands(void)
   {
-    CmdRow = prompt;
+    CmdRow.clear();
     cursor = CmdRow.size();
     return;
   }
 
   //## управление буфером команд / добавление символа в строку команды
-  char commands::push(int key)
+  char commands::add(int key)
   {
     if((key == '\n') || (key == '\r'))
     {
-      if( CmdRow.size() == prompt.size() ) return 0;
-      next();
+      if(CmdRow.empty()) return 0;
+      arch();
       return 1;
     }
     else if(key == KEY_UP)
     {
-      if(0 == current_idx) return 0;
-      else current_idx -= 1;
-      cursor = hist[current_idx].size();
+      if(hist_ptr == 0) return 0;
+      hist_ptr -= 1;
+      CmdRow = hist[hist_ptr];
+      cursor = CmdRow.size();
     }
     else if(key == KEY_DOWN)
     {
-      if(current_idx == hist.size() - 1) return 0;
-      else current_idx += 1;
-      cursor = hist[current_idx].size();
+      if(hist.empty()) return 0;
+      if(hist_ptr >= (hist.size()-1)) return 0;
+      hist_ptr += 1;
+      CmdRow = hist[hist_ptr];
+      cursor = CmdRow.size();
     }
     else if((key == KEY_BACKSPACE) || (key == KEY_BACKSPACE_M))
     {
-      if(hist[current_idx].size() > prompt.size())
-      {
-        auto& v = hist[current_idx];
-        v.pop_back();
-        cursor = v.size();
-      }
+      CmdRow.pop_back();
+      cursor = CmdRow.size();
     }
     else if(( key < 128 ) && (CmdRow.size() < cmd_max_size))
     {
@@ -82,19 +81,12 @@ namespace tr {
     return cursor;
   }
 
-  //## длина текущей строки
-  int commands::length(void)
-  {
-    return hist[current_idx].size();
-  }
-
   //## переключение на следующую строку
-  void commands::next(void)
+  void commands::arch(void)
   {
     hist.push_back(CmdRow);
-    current_idx = hist.size() - 1;
+    hist_ptr = hist.size();
     CmdRow.clear();
-    CmdRow = prompt;
     cursor = CmdRow.size();
     return;
   }
@@ -131,6 +123,8 @@ namespace tr {
 
     // Построить окно вывода сообщений
     getmaxyx( stdscr, console_height, console_width );
+    cmd_pos_x = 1;
+    cmd_pos_y = console_height - 2;
     WINDOW * frame = newwin( console_height - 4, console_width - 2, 1, 1 );
     wrefresh( frame );
 
@@ -157,6 +151,7 @@ namespace tr {
      wprintw( winLog, buf );
      wprintw( winLog, "\n" );
      wrefresh( winLog );
+     wmove(stdscr, cmd_pos_y, cmd_pos_x + Cmd.cursor_x());
      return;
   }
 
@@ -276,8 +271,16 @@ namespace tr {
   }
 
   //## Обработчик команд, введенных с клавиатуры
-  void enetw::accept_cmd(const char* cmd)
+  void enetw::exec_cmd(const char* cmd)
   {
+    if(is_server)
+    {
+
+    }
+    else // is client
+    {
+
+    }
     print_log(cmd);
     return;
   }
@@ -288,15 +291,22 @@ namespace tr {
     int key;
     while((key = getch()) > -1)
     {
-      if(key == KEY_F(10))
+      switch (key)
       {
-        online = false;
-      }
-      else
-      {
-        if(Cmd.push(key)) accept_cmd(Cmd.late());
-        mvwprintw( stdscr, console_height - 2, 1, "%s", Cmd.text() );
-        wmove(stdscr, console_height - 2, Cmd.cursor_x() + 1);
+        case KEY_F(1):
+          wprintw( winLog, help_cmd );
+          wrefresh( winLog );
+          wmove(stdscr, cmd_pos_y, cmd_pos_x + Cmd.cursor_x());
+          break;
+        case KEY_F(10):
+          running = false;
+          break;
+        default:
+          if(Cmd.add(key)) exec_cmd(Cmd.late());
+          mvwprintw( stdscr, cmd_pos_y, cmd_pos_x, "%s", Cmd.text() );
+          clrtoeol();
+          wmove(stdscr, cmd_pos_y, cmd_pos_x + Cmd.cursor_x());
+          break;
       }
     }
     return;
@@ -318,13 +328,14 @@ namespace tr {
       return EXIT_FAILURE;
     }
 
+    is_server = true;
+
     char buf[40];
     sprintf(buf, "Port listen: %d", address.port);
     print_log(buf);
-    mvwprintw( stdscr, console_height - 2, 1, "%s", Cmd.text() );
-    wmove(stdscr, console_height - 2, 2);
+    wmove(stdscr, cmd_pos_y, cmd_pos_x);
 
-    while(online)
+    while(running)
     {
       check_events(50);
       check_keyboard();
@@ -364,7 +375,7 @@ namespace tr {
     if(( enet_host_service( nethost, &event, 1000 ) > 0 )
       && ( event.type == ENET_EVENT_TYPE_CONNECT ))
     {
-      sprintf(buf, "Connection to the %s:%d complete", srv_name, address.port);
+      sprintf(buf, "Connected to the %s:%d", srv_name, address.port);
       print_log(buf);
     } else
     {
@@ -382,9 +393,9 @@ namespace tr {
   int enetw::run_client(char* srv_name, enet_uint32 cl_data)
   {
     open_connection(srv_name, cl_data);
-    mvwprintw( stdscr, console_height - 2, 1, "%s", Cmd.text() );
+    wmove(stdscr, cmd_pos_y, cmd_pos_x);
 
-    while (online)
+    while (running)
     {
       if(nullptr != cl_peer) check_events(50);
       check_keyboard();

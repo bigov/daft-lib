@@ -58,38 +58,36 @@ namespace tr
     public:
       commands(void);
 
-      std::string prompt = ">";
-
-      char push(int);     // добавляет символ в строку команды
-      const char* text(void);   // данные в текущей строке истории
-      const char* late(void);   // передает данные из крайней строки истории
-      int length(void);   // передает длину текущей строки
-      int cursor_x(void); // передает позицию курсора в строке ввода
-      void next(void);    // переключает кэш истории команд
+      char add(int);          // добавить символ в строку команды
+      const char* text(void); // получить текст строки ввода
+      int cursor_x(void);     // получить позицию курсора в строке ввода
+      const char* late(void); // получить текст предыдущей команды
 
     private:
-      static const size_t cmd_max_size = 128; // ограничение длины команды
-      size_t current_idx = 0;                 // индекс текущей строки в кэше
+      void arch(void);        // сохранить введенную команду
+
+      static const size_t cmd_max_size = 128; // ограничение команды по длине
+      size_t hist_ptr = 0;                    // индекс команды в истории
       size_t cursor = 0;                      // позиция курсора в строке
       std::vector<std::string> hist = {};     // история команд
-      std::string CmdRow = {};                // содержимое строковой команды
+      std::string CmdRow = {};                // строка ввода команды
   };
 
   ///### Обертка к enet
   class enetw
   {
   private:
-    bool online = true;
-    //std::vector<char> CmdLine = {}; // содержимое строки ввода
-    tr::commands Cmd = {};
+    bool running = true;
+    bool is_server = false;
     ENetHost* nethost = nullptr;
     ENetAddress address = {};
+    tr::commands Cmd = {}; // строка ввода команды
 
     // настройки сервера
-    int srv_conns = 8;     // количество подключений
-    int srv_channels = 0;  // max число каналов для каждого подключения
-    int in_bw = 0;     // скорость приема (Кбайт/с)
-    int out_bw = 0;    // скорость передачи (Кбайт/с)
+    int srv_conns = 8;    // количество подключений
+    int srv_channels = 0; // max число каналов для каждого подключения
+    int in_bw = 0;        // скорость приема (Кбайт/с)
+    int out_bw = 0;       // скорость передачи (Кбайт/с)
 
     int port_min = 12888; // Начальный порт сервера. Если он занят, то перебором
     int port_max = 12900; // открывается следующий до "port_max". Если все
@@ -99,8 +97,9 @@ namespace tr
     int cl_channels = 1;         // max число каналов для каждого подключения
     ENetPeer* cl_peer = nullptr; // клиентский peer
 
-    WINDOW * winLog = nullptr;           // окно ncurses
-    int console_width, console_height;   // размеры терминального окна
+    WINDOW * winLog = nullptr;         // окно ncurses
+    int console_width, console_height; // размеры терминального окна
+    int cmd_pos_y, cmd_pos_x;          // положение начала строки ввода
 
     void ev_connect(ENetPeer*);
     void ev_disconnect(ENetPeer*);
@@ -108,7 +107,7 @@ namespace tr
     void send_by_peer(ENetPeer*, std::vector<enet_uint8>&);
     void print_log(const char*);
     void check_keyboard(void);
-    void accept_cmd(const char *);
+    void exec_cmd(const char *);
     void check_events(int timeout);
     void open_connection(char*, enet_uint32);
 
@@ -123,6 +122,10 @@ namespace tr
     void disconnect_me(void);
     void send_data(std::vector<enet_uint8>&);
 
+    const char help_cmd[96] =
+        "\nHELP:\n"
+        "Command with prefix \":\" post to the remote exec;\n"
+        "Command without prefix exec locally;\n\n";
   };
 
 } // tr
