@@ -213,7 +213,7 @@ namespace tr {
     char buf[128];
     if(0 != peer->host->address.host)
     {
-      sprintf(buf, "Connected from %s:%d, ID=%u",
+      sprintf(buf, "Connected from %d:%d, ID=%u",
               peer->host->address.host, peer->address.port, peer->connectID);
     } else
     {
@@ -244,7 +244,7 @@ namespace tr {
     enet_packet_destroy( received ); // после обработки пакет следует удалить
 
     char buf[80];
-    sprintf(buf, "Size of received data = %d", ReceivedData.size());
+    sprintf(buf, "Size of received data = %lu", ReceivedData.size());
     print_log(buf);
 
     ReceivedData.empty();
@@ -263,7 +263,7 @@ namespace tr {
 
     if(0 != peer->host->address.host)
     {
-      sprintf(buf, "%s:%d is disconnected",
+      sprintf(buf, "%d:%d is disconnected",
               peer->host->address.host, peer->address.port);
     } else
     {
