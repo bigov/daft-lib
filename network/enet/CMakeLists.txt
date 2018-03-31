@@ -45,7 +45,7 @@ SET( CTRL_SRC
   "${CMAKE_SOURCE_DIR}/enetw.cpp"
 )
 
-SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}" )
+SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++17"  )
 
 find_package( PkgConfig REQUIRED )
 pkg_check_modules( ENET REQUIRED libenet )

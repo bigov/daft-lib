@@ -32,7 +32,7 @@ event.channelID          // по какому каналу
   #include <ncurses.h>
 #endif
 
-#define KEY_BACKSPACE_M 0177
+#define KEY_BACKSPACE_M0 127    // Linux
 
 namespace tr
 {

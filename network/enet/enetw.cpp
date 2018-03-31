@@ -26,7 +26,7 @@ namespace tr {
     return;
   }
 
-  //## управление буфером команд / добавление символа в строку команды
+  //## управление буфером команд
   char commands::add(int key)
   {
     if((key == '\n') || (key == '\r'))
@@ -34,6 +34,22 @@ namespace tr {
       if(CmdRow.empty()) return 0;
       arch();
       return 1;
+    }
+    else if(key == KEY_HOME)
+    {
+      cursor = 0;
+    }
+    else if(key == KEY_END)
+    {
+      cursor = CmdRow.size();
+    }
+    else if(key == KEY_LEFT)
+    {
+      if(cursor > 0) cursor -= 1;
+    }
+    else if(key == KEY_RIGHT)
+    {
+      if(cursor < CmdRow.size()) cursor += 1;
     }
     else if(key == KEY_UP)
     {
@@ -50,15 +66,27 @@ namespace tr {
       CmdRow = hist[hist_ptr];
       cursor = CmdRow.size();
     }
-    else if((key == KEY_BACKSPACE) || (key == KEY_BACKSPACE_M))
+    else if( (key == KEY_BACKSPACE)    ||
+             (key == KEY_BACKSPACE_M0) ||
+             (key == '\b') )
     {
-      CmdRow.pop_back();
-      cursor = CmdRow.size();
+      if(cursor > 0)
+      {
+        CmdRow.erase(CmdRow.begin()+cursor-1, CmdRow.begin()+cursor);
+        cursor -= 1;
+      }
+    }
+    else if(key == KEY_DC)
+    {
+      if(CmdRow.size() > cursor)
+      {
+        CmdRow.erase(CmdRow.begin()+cursor, CmdRow.begin()+cursor+1);
+      }
     }
     else if(( key < 128 ) && (CmdRow.size() < cmd_max_size))
     {
-      CmdRow += static_cast<char>(key);
-      cursor = CmdRow.size();
+      CmdRow.insert(CmdRow.begin() + cursor, static_cast<char>(key));
+      cursor += 1;
     }
     return 0;
   }
