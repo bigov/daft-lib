@@ -1,6 +1,7 @@
-//
-// Обертка к библиотеке enet
-//
+/*
+ Обертка к библиотеке enet
+*/
+
 #include "enetw.hpp"
 
 namespace tr {
@@ -72,20 +73,23 @@ namespace tr {
     {
       if(cursor > 0)
       {
-        CmdRow.erase(CmdRow.begin()+cursor-1, CmdRow.begin()+cursor);
+        CmdRow.erase(CmdRow.begin() + static_cast<long>(cursor)-1,
+                     CmdRow.begin() + static_cast<long>(cursor) );
         cursor -= 1;
       }
     }
     else if(key == KEY_DC)
     {
-      if(CmdRow.size() > cursor)
+      if(CmdRow.size() > cursor )
       {
-        CmdRow.erase(CmdRow.begin()+cursor, CmdRow.begin()+cursor+1);
+        CmdRow.erase(CmdRow.begin() + static_cast<long>(cursor),
+                     CmdRow.begin() + static_cast<long>(cursor) + 1);
       }
     }
     else if(( key < 128 ) && (CmdRow.size() < cmd_max_size))
     {
-      CmdRow.insert(CmdRow.begin() + cursor, static_cast<char>(key));
+      CmdRow.insert(CmdRow.begin() + static_cast<long>(cursor),
+                    static_cast<char>(key));
       cursor += 1;
     }
     return 0;
@@ -106,7 +110,7 @@ namespace tr {
   // передает позицию курсора в строке ввода
   int commands::cursor_x(void)
   {
-    return cursor;
+    return static_cast<int>(cursor);
   }
 
   //## переключение на следующую строку
@@ -141,6 +145,16 @@ namespace tr {
 
     setlocale(LC_CTYPE, "");
     initscr(); // инициализация ncurses
+
+    //getmaxyx( stdscr, console_height, console_width );
+    //
+    // В функции getmaxyx(), которая передает размер консоли, анализатор находит
+    // ошибку "zero as null pointer constant". Поэтому решено воспользоваться
+    // встроенными константами количества строк и колонок терминала:
+    //
+    console_height = LINES;
+    console_width = COLS;
+
     cbreak();  // Line buffering disabled, Pass on everty thing to me
     keypad(stdscr, TRUE); // возможность использовать функциональные кл.
     nodelay(stdscr,TRUE); // turn off getch() wait
@@ -150,7 +164,6 @@ namespace tr {
     refresh();
 
     // Построить окно вывода сообщений
-    getmaxyx( stdscr, console_height, console_width );
     cmd_pos_x = 1;
     cmd_pos_y = console_height - 2;
     WINDOW * frame = newwin( console_height - 4, console_width - 2, 1, 1 );
@@ -275,7 +288,7 @@ namespace tr {
   }
 
   //## опрос событий
-  void enetw::check_events(int timeout)
+  void enetw::check_events(enet_uint32 timeout)
   {
     ENetEvent event;
     while( enet_host_service( nethost, &event, timeout ) > 0 )
@@ -438,7 +451,7 @@ namespace tr {
   {
     ENetEvent event;
     enet_peer_disconnect( cl_peer, 0);
-    int timeout = 200;
+    unsigned int timeout = 200;
     while( enet_host_service( nethost, &event, timeout ) > 0 )
     {
       switch( event.type )

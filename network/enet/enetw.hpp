@@ -1,7 +1,5 @@
-//
-// Обертка к библиотеке enet
-//
 /*
+  Обертка к библиотеке enet
 
 // Структура данных
 event.packet->dataLength // длина пакета
@@ -11,8 +9,8 @@ event.channelID          // по какому каналу
 
 */
 
-#ifndef __ENETW_HPP__
-#define __ENETW_HPP__
+#ifndef _ENETW_HPP_
+#define _ENETW_HPP_
 
 #include <cwctype>
 #include <cstring>
@@ -52,6 +50,8 @@ namespace tr
   // Записывает в строковый буфер отметку времени
   extern void get_time_string(char * buffer);
 
+  extern char time_buf_format[];
+
   ///### Управление буфером команд
   class commands
   {
@@ -84,18 +84,18 @@ namespace tr
     tr::commands Cmd = {}; // строка ввода команды
 
     // настройки сервера
-    int srv_conns = 8;    // количество подключений
-    int srv_channels = 0; // max число каналов для каждого подключения
-    int in_bw = 0;        // скорость приема (Кбайт/с)
-    int out_bw = 0;       // скорость передачи (Кбайт/с)
+    unsigned char srv_conns = 8;   // количество подключений
+    unsigned char srv_channels = 0;// max число каналов для каждого подключения
+    unsigned int in_bw = 0;        // скорость приема (Кбайт/с)
+    unsigned int out_bw = 0;       // скорость передачи (Кбайт/с)
 
-    int port_min = 12888; // Начальный порт сервера. Если он занят, то перебором
-    int port_max = 12900; // открывается следующий до "port_max". Если все
-                          // оказались заняты, генерируется ошибка
+    enet_uint16 port_min = 12888; // Начальный порт сервера. Если он занят, то перебором
+    enet_uint16 port_max = 12900; // открывается следующий до "port_max". Если все
+                                  // оказались заняты, генерируется ошибка
     // настройки клиента
-    int cl_conns = 1;            // количество подключений
-    int cl_channels = 1;         // max число каналов для каждого подключения
-    ENetPeer* cl_peer = nullptr; // клиентский peer
+    unsigned int cl_conns = 1;    // количество подключений
+    unsigned int cl_channels = 1; // max число каналов для каждого подключения
+    ENetPeer* cl_peer = nullptr;  // клиентский peer
 
     WINDOW * winLog = nullptr;         // окно ncurses
     int console_width, console_height; // размеры терминального окна
@@ -108,7 +108,7 @@ namespace tr
     void print_log(const char*);
     void check_keyboard(void);
     void exec_cmd(const char *);
-    void check_events(int timeout);
+    void check_events(enet_uint32 timeout);
     void open_connection(char*, enet_uint32);
 
   public:
@@ -129,4 +129,4 @@ namespace tr
   };
 
 } // tr
-#endif // __ENETW_HPP__
+#endif // _ENETW_HPP_

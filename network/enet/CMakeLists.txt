@@ -47,12 +47,14 @@ SET( CTRL_SRC
 
 SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++17"  )
 
+add_subdirectory( ".extlibs/enet" "enet" EXCLUDE_FROM_ALL)
+include_directories( ".extlibs/enet/include" )
+
 find_package( PkgConfig REQUIRED )
-pkg_check_modules( ENET REQUIRED libenet )
 pkg_check_modules( NCURSESW REQUIRED ncursesw )
 
 add_executable( server ${SRV_SRC} )
-target_link_libraries( server ${ENET_LIBRARIES} ${NCURSESW_LIBRARIES} )
+target_link_libraries( server enet ${NCURSESW_LIBRARIES} )
 
 add_executable( ctrl ${CTRL_SRC} )
-target_link_libraries( ctrl ${ENET_LIBRARIES} ${NCURSESW_LIBRARIES} )
+target_link_libraries( ctrl enet ${NCURSESW_LIBRARIES} )
