@@ -17,7 +17,7 @@
 #
 
 cmake_minimum_required( VERSION 3.0 )
-project( enet-server )
+project( enetwrap )
 set(PROJECT_AUTHOR "bigov")
 set(PROJECT_AUTHOR_EMAIL "bigov@yandex.ru")
 
@@ -47,8 +47,8 @@ SET( CTRL_SRC
 
 SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++17"  )
 
-add_subdirectory( ".extlibs/enet" "enet" EXCLUDE_FROM_ALL)
-include_directories( ".extlibs/enet/include" )
+add_subdirectory( "${CMAKE_SOURCE_DIR}/.extlibs/enet" "enet" EXCLUDE_FROM_ALL)
+include_directories( "${CMAKE_SOURCE_DIR}/.extlibs/enet/include" )
 
 find_package( PkgConfig REQUIRED )
 pkg_check_modules( NCURSESW REQUIRED ncursesw )
