@@ -1,4 +1,0 @@
-
-Сгенерировано:
---------------
-lua LoadGen.lua -style=func_cpp -spec=gl -version=4.5 -profile=compatibility com_4_5
