@@ -11,20 +11,20 @@
 #include <string>
 #include <ctime>
 
-//#define _XOPEN_SOURCE_EXTENDED 1
-#define _XOPEN_SOURCE_EXTENDED
+#define _XOPEN_SOURCE_EXTENDED 1
+//#define _XOPEN_SOURCE_EXTENDED
 #if ENABLE_NLS != 1
   #undef ENABLE_NLS
   #define ENABLE_NLS 1
 #endif
-#define _GNU_SOURCE
+//#define _GNU_SOURCE
 
 #if defined(_WIN32)
   #include <ncursesw/ncurses.h>
   #include <ncursesw/cursesw.h>
    #define KEY_BACKSPACE_tr KEY_BACKSPACE
 #else
-  #include <ncursesw.h>
+  #include <ncurses.h>
   #define KEY_BACKSPACE_tr 127    // Linux
 #endif
 

@@ -116,32 +116,31 @@ const wchar_t *console::check_keyboard(void)
       return cmd_exit;
     default:
 
-      //debug
-      /*
-      if (getch() > 0)
-      {
-        waddwstr( winLog, L"ok" );
-        wrefresh( winLog );
-      } else {
-        waddwstr( winLog, L"no" );
-        wrefresh( winLog );
-       }
-      ////
-      const wchar_t wch = 0;
-      unget_wch(wch);
-      std::wstring b = std::to_wstring(wch) + L"\n";
-      waddwstr( winLog, b.c_str() );
-      wrefresh( winLog );
-      //debug
+   //debug
+   /*
+   if (getch() > 0)
+   {
+     waddwstr( winLog, L"ok" );
+     wrefresh( winLog );
+   } else {
+     waddwstr( winLog, L"no" );
+     wrefresh( winLog );
+    }
+   ////
+   const wchar_t wch = 0;
+   unget_wch(wch);
+   std::wstring b = std::to_wstring(wch) + L"\n";
+   waddwstr( winLog, b.c_str() );
+   wrefresh( winLog );
+   //debug
 
-      wchar_t war[] = {L"WQ"};
-      int c = wgetch(stdscr);
-      memcpy(war, &c, 4);
-      std::wstring wst = std::to_wstring(static_cast<wchar_t>(war[0])) + L"\n";
-      waddwstr( winLog, wst.c_str() );
-      wrefresh( winLog );
-      */
-
+   wchar_t war[] = {L"WQ"};
+   int c = wgetch(stdscr);
+   memcpy(war, &c, 4);
+   std::wstring wst = std::to_wstring(static_cast<wchar_t>(war[0])) + L"\n";
+   waddwstr( winLog, wst.c_str() );
+   wrefresh( winLog );
+   */
 
       if( add(key) ) return hist.back().c_str();
 
@@ -217,12 +216,19 @@ bool console::add(int key)
   else if( ( static_cast<unsigned int>(key) < WCHAR_MAX )
         && ( CmdRow.size() < cmd_max_size) )
   {
-    CmdRow.insert(CmdRow.begin() + static_cast<long>(cursor), static_cast<wchar_t>(key));
+    // UTF-8 вводится за два вызова getch()
+    int k1 = getch();
+    if(k1 > 0) key += k1;  // НЕВЕРНО - ИСПРАВИТЬ!
+    wchar_t w_ch = static_cast<wchar_t>(key);
+
+    CmdRow.insert(CmdRow.begin() + static_cast<long>(cursor), w_ch);
 
     // == DEBUG ==
+    /*
     std::wstring sk = std::to_wstring(key) + L"\n";
     waddwstr( winLog, sk.c_str());
     wrefresh( winLog );
+    */
     // == /DEBUG ==
 
     cursor += 1;
