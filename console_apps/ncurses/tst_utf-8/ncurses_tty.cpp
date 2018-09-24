@@ -36,7 +36,9 @@ wint_t console::input_wch[] = { L'0' };
 console::console(void)
 {
   //setlocale(LC_CTYPE, "ru_RU.UTF-8");
-  setlocale(LC_ALL, "");
+  //setlocale(LC_ALL, "");
+  setlocale(LC_ALL, "C-TRADITIONAL");
+
   //signal(SIGINT, sig);
   initscr(); // инициализация ncurses
 
