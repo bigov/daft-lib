@@ -104,7 +104,7 @@ const wchar_t *console::check_keyboard(void)
 {
   //int key = getch();
   wget_wch(stdscr, input_wch);
-  int key = *input_wch;
+  int key = static_cast<int>(*input_wch);
 
   switch (key)
   {

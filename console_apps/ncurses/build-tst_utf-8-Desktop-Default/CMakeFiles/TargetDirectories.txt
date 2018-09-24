@@ -1,0 +1,3 @@
+/home/ib/dev_CPP/daft-lib/console_apps/ncurses/build-tst_utf-8-Desktop-Default/CMakeFiles/rebuild_cache.dir
+/home/ib/dev_CPP/daft-lib/console_apps/ncurses/build-tst_utf-8-Desktop-Default/CMakeFiles/client.dir
+/home/ib/dev_CPP/daft-lib/console_apps/ncurses/build-tst_utf-8-Desktop-Default/CMakeFiles/edit_cache.dir

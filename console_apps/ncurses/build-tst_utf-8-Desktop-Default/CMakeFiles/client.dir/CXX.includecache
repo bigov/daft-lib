@@ -1,0 +1,32 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/ib/dev_CPP/daft-lib/console_apps/ncurses/tst_utf-8/ncurses_tty.cpp
+ncurses_tty.hpp
+/home/ib/dev_CPP/daft-lib/console_apps/ncurses/tst_utf-8/ncurses_tty.hpp
+
+/home/ib/dev_CPP/daft-lib/console_apps/ncurses/tst_utf-8/ncurses_tty.hpp
+vector
+-
+string
+-
+ctime
+-
+ncursesw/ncurses.h
+-
+ncursesw/cursesw.h
+-
+ncurses.h
+-
+locale.h
+-
+unistd.h
+-
+wchar.h
+-
+
