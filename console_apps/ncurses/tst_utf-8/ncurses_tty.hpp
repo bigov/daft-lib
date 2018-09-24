@@ -31,7 +31,6 @@
 #include <locale.h> // setlocale()
 #include <unistd.h> // sleep()
 #include <wchar.h>
-#include "utf8.h"
 
 //extern NCURSES_EXPORT(int) waddwstr (WINDOW *,const wchar_t *);
 
@@ -49,17 +48,18 @@ class console
     static int cursor_x(void);     // получить позицию курсора в строке ввода
     static const wchar_t *check_keyboard(void);  // опрос клавиатуры
     static void display_message(const wchar_t*); // вывод сообщения
-    static std::vector<std::wstring> hist;     // история команд
-    static std::wstring CmdRow;                // строка ввода команды
+    static std::vector<std::wstring> hist;       // история команд
+    static std::wstring CmdRow;                  // строка ввода команды
 
   private:
     static void arch(void);            // сохранить введенную команду
     int console_width = 0;
-    int console_height = 0; // размеры терминального окна
+    int console_height = 0;            // размеры терминального окна
     static int cmd_pos_y, cmd_pos_x;   // положение начала строки ввода
     static size_t cursor;              // позиция курсора в строке
     static WINDOW * winLog;            // окно ncurses
     static size_t hist_ptr;            // индекс команды в истории
+    static wint_t input_wch[1];        // введенный символ
 };     // class console
 }      // namespace tr
 #endif // NCURSES_TTY_HPP

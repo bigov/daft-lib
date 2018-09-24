@@ -28,6 +28,7 @@ WINDOW * console::winLog = nullptr; // окно ncurses
 size_t console::hist_ptr = 0;                  // индекс команды в истории
 std::vector<std::wstring> console::hist = {};   // история команд
 std::wstring console::CmdRow = {};              // строка ввода команды
+wint_t console::input_wch[] = { L'0' };
 
 ///
 ///  инициализация класса
@@ -89,7 +90,7 @@ console::~console(void)
 ///
 void console::display_message(const wchar_t *buf)
 {
-   waddwstr(winLog, buf);
+   waddwstr( winLog, buf );
    waddwstr( winLog, L"\n" );
    wrefresh( winLog );
    wmove(stdscr, cmd_pos_y, cmd_pos_x + cursor_x());
@@ -101,7 +102,9 @@ void console::display_message(const wchar_t *buf)
 ///
 const wchar_t *console::check_keyboard(void)
 {
-  int key = getch();
+  //int key = getch();
+  wget_wch(stdscr, input_wch);
+  int key = *input_wch;
 
   switch (key)
   {
@@ -185,21 +188,10 @@ bool console::add(int key)
   else if( ( static_cast<unsigned int>(key) < WCHAR_MAX )
         && ( CmdRow.size() < cmd_max_size) )
   {
-    // UTF-8 вводится за два вызова getch()
-    int k2 = getch();
-    if(k2 > 0)
-    {
-        std::vector<wchar_t> buf = {};
-        buf.emplace_back(static_cast<wchar_t>(key));
-        buf.emplace_back(static_cast<wchar_t>(k2));
-        wchar_t res = 0;
-        utf8::utf16to8( buf.begin(), buf.end(), &res );
-        CmdRow.insert(CmdRow.begin() + static_cast<long>(cursor), res);
-    } else
-    {
-      CmdRow.insert(CmdRow.begin() + static_cast<long>(cursor),
-                    static_cast<wchar_t>(key));
-    }
+    unget_wch(static_cast<wchar_t>(key));
+    get_wch(input_wch);
+    CmdRow.insert(CmdRow.begin() + static_cast<long>(cursor),
+                    static_cast<wchar_t>(*input_wch));
     cursor += 1;
   }
   return false;
