@@ -31,18 +31,13 @@
 #include <locale.h> // setlocale()
 #include <unistd.h> // sleep()
 #include <wchar.h>
+#include "utf8.h"
 
 //extern NCURSES_EXPORT(int) waddwstr (WINDOW *,const wchar_t *);
 
 namespace tr {
 
-const char cmd_help_msg[] = "\nHELP:\n"
-      "Command with prefix \":\" will be transferred to the server;\n"
-      "Command without prefix will be executed locally;\n\n";
 const wchar_t cmd_exit[] = L"exit";
-
-// Записывает в строковый буфер отметку времени
-// extern void get_time_string(char * buffer);
 
 //## Управление вводом команд и отображением информации
 class console

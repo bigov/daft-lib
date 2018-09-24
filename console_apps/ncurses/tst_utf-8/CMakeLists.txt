@@ -45,5 +45,5 @@ find_package( PkgConfig REQUIRED )
 pkg_check_modules( NCURSESW REQUIRED ncursesw )
 
 add_executable( client ${CTRL_SRC} )
-target_link_libraries( client enet ${NCURSESW_LIBRARIES} )
+target_link_libraries( client ${NCURSESW_LIBRARIES} )
 

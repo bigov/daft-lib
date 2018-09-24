@@ -4,7 +4,6 @@ namespace tr {
 
 const int time_buf_size = 20;
 static const size_t cmd_max_size = 128; // ограничение команды по длине
-const auto size_int = sizeof(int);
 
 ///
 /// Записывает в строковый буфер отметку времени
@@ -54,7 +53,7 @@ console::console(void)
   nodelay(stdscr,TRUE); // turn off getch() wait
   noecho();
   wbkgd( stdscr, A_REVERSE );
-  addstr(" F1: help; F10: exit;");
+  addstr(" Exit: F10");
   refresh();
 
   // Позиция строки ввода команд
@@ -104,50 +103,20 @@ const wchar_t *console::check_keyboard(void)
 {
   int key = getch();
 
-  switch (key) {
+  switch (key)
+  {
     case -1: case 0:
-      return nullptr;
-    case KEY_F(1):
-      wprintw( winLog, cmd_help_msg );
-      wrefresh( winLog );
-      wmove(stdscr, cmd_pos_y, cmd_pos_x + cursor_x());
       return nullptr;
     case KEY_F(10):
       return cmd_exit;
     default:
-
-   //debug
-   /*
-   if (getch() > 0)
-   {
-     waddwstr( winLog, L"ok" );
-     wrefresh( winLog );
-   } else {
-     waddwstr( winLog, L"no" );
-     wrefresh( winLog );
-    }
-   ////
-   const wchar_t wch = 0;
-   unget_wch(wch);
-   std::wstring b = std::to_wstring(wch) + L"\n";
-   waddwstr( winLog, b.c_str() );
-   wrefresh( winLog );
-   //debug
-
-   wchar_t war[] = {L"WQ"};
-   int c = wgetch(stdscr);
-   memcpy(war, &c, 4);
-   std::wstring wst = std::to_wstring(static_cast<wchar_t>(war[0])) + L"\n";
-   waddwstr( winLog, wst.c_str() );
-   wrefresh( winLog );
-   */
-
-      if( add(key) ) return hist.back().c_str();
-
-      mvwaddwstr (stdscr, cmd_pos_y, cmd_pos_x, CmdRow.c_str());
-      clrtoeol();
-      wmove(stdscr, cmd_pos_y, cmd_pos_x + cursor_x());
-      return nullptr;
+      if( add(key) )
+        return hist.back().c_str();
+      else
+        mvwaddwstr (stdscr, cmd_pos_y, cmd_pos_x, CmdRow.c_str());
+        clrtoeol();
+        wmove(stdscr, cmd_pos_y, cmd_pos_x + cursor_x());
+        return nullptr;
   }
 }
 
@@ -217,21 +186,22 @@ bool console::add(int key)
         && ( CmdRow.size() < cmd_max_size) )
   {
     // UTF-8 вводится за два вызова getch()
-    int k1 = getch();
-    if(k1 > 0) key += k1;  // НЕВЕРНО - ИСПРАВИТЬ!
-    wchar_t w_ch = static_cast<wchar_t>(key);
-
-    CmdRow.insert(CmdRow.begin() + static_cast<long>(cursor), w_ch);
-
-    // == DEBUG ==
-    /*
-    std::wstring sk = std::to_wstring(key) + L"\n";
-    waddwstr( winLog, sk.c_str());
-    wrefresh( winLog );
-    */
-    // == /DEBUG ==
-
+    int k2 = getch();
+    if(k2 > 0)
+    {
+        std::vector<wchar_t> buf = {};
+        buf.emplace_back(static_cast<wchar_t>(key));
+        buf.emplace_back(static_cast<wchar_t>(k2));
+        std::wstring res = {};
+        utf8::utf16to8( buf.begin(), buf.end(), std::back_inserter(res) );
+        CmdRow.insert(CmdRow.begin() + static_cast<long>(cursor), *res.data());
+    } else
+    {
+      CmdRow.insert(CmdRow.begin() + static_cast<long>(cursor),
+                    static_cast<wchar_t>(key));
+    }
     cursor += 1;
+
   }
   return false;
 }
