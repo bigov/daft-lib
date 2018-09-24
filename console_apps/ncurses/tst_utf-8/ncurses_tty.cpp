@@ -192,16 +192,15 @@ bool console::add(int key)
         std::vector<wchar_t> buf = {};
         buf.emplace_back(static_cast<wchar_t>(key));
         buf.emplace_back(static_cast<wchar_t>(k2));
-        std::wstring res = {};
-        utf8::utf16to8( buf.begin(), buf.end(), std::back_inserter(res) );
-        CmdRow.insert(CmdRow.begin() + static_cast<long>(cursor), *res.data());
+        wchar_t res = 0;
+        utf8::utf16to8( buf.begin(), buf.end(), &res );
+        CmdRow.insert(CmdRow.begin() + static_cast<long>(cursor), res);
     } else
     {
       CmdRow.insert(CmdRow.begin() + static_cast<long>(cursor),
                     static_cast<wchar_t>(key));
     }
     cursor += 1;
-
   }
   return false;
 }
