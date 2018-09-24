@@ -1,1 +1,0 @@
-/usr/bin/g++   -std=c++17 -Werror -Wall -Wextra -Wpedantic -Woverloaded-virtual -Wctor-dtor-privacy -Wnon-virtual-dtor -Wconversion -Wsign-conversion -Winit-self -Wunreachable-code -Weffc++ -Wold-style-cast -g  -rdynamic CMakeFiles/client.dir/main.cpp.o CMakeFiles/client.dir/ncurses_tty.cpp.o  -o client -lncursesw 
