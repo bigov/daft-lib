@@ -36,7 +36,9 @@ wint_t console::input_wch[] = { L'0' };
 console::console(void)
 {
   //setlocale(LC_CTYPE, "ru_RU.UTF-8");
-  setlocale(LC_ALL, "");
+  //setlocale(LC_ALL, "");
+  setlocale(LC_ALL, "C-TRADITIONAL");
+
   //signal(SIGINT, sig);
   initscr(); // инициализация ncurses
 
@@ -104,7 +106,7 @@ const wchar_t *console::check_keyboard(void)
 {
   //int key = getch();
   wget_wch(stdscr, input_wch);
-  int key = *input_wch;
+  int key = static_cast<int>(*input_wch);
 
   switch (key)
   {
