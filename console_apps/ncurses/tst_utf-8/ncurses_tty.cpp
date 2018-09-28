@@ -188,6 +188,8 @@ bool console::add(int key)
   else if( ( static_cast<unsigned int>(key) < WCHAR_MAX )
         && ( CmdRow.size() < cmd_max_size) )
   {
+    // Для приема двухбайтного символа "input_wch" надо вначале вернуть
+    // в кэш принятый перед этим из буфера байт "key"
     unget_wch(static_cast<wchar_t>(key));
     get_wch(input_wch);
     CmdRow.insert(CmdRow.begin() + static_cast<long>(cursor),
