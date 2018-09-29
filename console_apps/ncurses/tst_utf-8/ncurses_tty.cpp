@@ -35,19 +35,8 @@ wint_t console::input_wch[] = { L'0' };
 ///
 console::console(void)
 {
-  //setlocale(LC_CTYPE, "ru_RU.UTF-8");
-  //setlocale(LC_ALL, "");
-  setlocale(LC_ALL, "C-TRADITIONAL");
-
-  //signal(SIGINT, sig);
+  setlocale(LC_ALL, "");
   initscr(); // инициализация ncurses
-
-  // getmaxyx( stdscr, console_height, console_width );
-  //
-  // В функции getmaxyx(), которая передает размер консоли, анализатор находит
-  // ошибку "zero as null pointer constant". Поэтому решено воспользоваться
-  // встроенными константами количества строк и колонок терминала:
-  //
   console_height = LINES;
   console_width = COLS;
 
