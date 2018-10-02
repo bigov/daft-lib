@@ -20,7 +20,7 @@ set completeopt=menuone,menu,longest
 let g:syntastic_cpp_compiler_options="-std=c++14 -Werror -Wall -Wextra
 	\ -Wpedantic -Woverloaded-virtual -Wctor-dtor-privacy -Wnon-virtual-dtor
 	\ -Wconversion -Wsign-conversion -Winit-self -Wunreachable-code
-	\ -Weffc++ -Wold-style-cast -Iinclude -Ideps"
+	\ -Weffc++ -Wold-style-cast -Id:/dev/libs/glfw/include -Id:/dev/libs/glcore33"
 
 if match($OS, "Windows_NT") > -1
 	let g:syntastic_cpp_compiler="c++.exe"

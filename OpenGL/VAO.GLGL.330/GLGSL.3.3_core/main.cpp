@@ -1,9 +1,8 @@
 #include <iostream>
 #include <string>
-#include "gl_core_3_3.hpp"
+#include "gl_core33.h"
 #include <GLFW/glfw3.h>
 #define ERR throw std::runtime_error
-#define GL_FALSE false
 //----------------------------------------------------------------------------
 const GLchar * vert_shader_array[] = {"#version 330 core\n\
                                                    \n\
@@ -55,15 +54,24 @@ void open_window(void)
 {
 	glfwSetErrorCallback(error_callback);
 	if (!glfwInit()) ERR("Error init GLFW lib.");
-
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, 0);
+  glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, 1);
+  glfwWindowHint(GLFW_VISIBLE, 0);
+  const char* title = "GLSL learn";
 
-	pWin = glfwCreateWindow(1024, 800, "GLSL learn", NULL, NULL);
-	if (nullptr == pWin) ERR("Creating Window fail.");
+  pWin = glfwCreateWindow(1024, 800, title, NULL, NULL);
+  //fullscreen mode
+  //pWin = glfwCreateWindow(1024, 800, title, glfwGetPrimaryMonitor(), NULL);
+
+  //glfwSetWindowPos(pWin, 10, 10);
+  glfwShowWindow(pWin);
+
+  if (nullptr == pWin) ERR("Creating Window fail.");
 	glfwMakeContextCurrent(pWin);
-	if(!gl::sys::LoadFunctions())	ERR("Can't load OpenGl finctions");
+	if(!ogl_LoadFunctions())	ERR("Can't load OpenGl finctions");
 	glfwSwapInterval(0);
 	glfwSetKeyCallback(pWin, key_callback);
 	return;
@@ -72,18 +80,18 @@ void open_window(void)
 //## компиялция шейдера с контролем результата
 void compile_shader(GLuint shader)
 {
-	gl::CompileShader(shader);
+	glCompileShader(shader);
 	GLint result;
-	gl::GetShaderiv(shader, gl::COMPILE_STATUS, &result);
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &result);
 	if(GL_FALSE == result)
 	{
 		GLint logLen;
-		gl::GetShaderiv(shader, gl::INFO_LOG_LENGTH, &logLen);
+		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLen);
 		if(logLen)
 		{
 			char * log = new char[logLen];
 			GLsizei written;
-			gl::GetShaderInfoLog(shader, logLen, &written, log);
+			glGetShaderInfoLog(shader, logLen, &written, log);
 			std::cout << log << '\n';
 			delete [] log;
 		}
@@ -95,45 +103,45 @@ void compile_shader(GLuint shader)
 //### Компиляция и запуск GLSL программы
 void init_program(void)
 {
-	GLuint vertShader = gl::CreateShader(gl::VERTEX_SHADER);
+	GLuint vertShader = glCreateShader(GL_VERTEX_SHADER);
 	if (!vertShader) ERR("Error create GL_VERTEX_SHADER");
-	gl::ShaderSource(vertShader, 1, vert_shader_array, NULL);
+	glShaderSource(vertShader, 1, vert_shader_array, NULL);
 	compile_shader(vertShader);
 
-	GLuint fragShader = gl::CreateShader(gl::FRAGMENT_SHADER);
+	GLuint fragShader = glCreateShader(GL_FRAGMENT_SHADER);
 	if (!fragShader) ERR("Error create GL_FRAGMENT_SHADER");
-	gl::ShaderSource(fragShader, 1, frag_shader_array, NULL);
+	glShaderSource(fragShader, 1, frag_shader_array, NULL);
 	compile_shader(fragShader);
 
-	program = gl::CreateProgram();
+	program = glCreateProgram();
 	if (!program) ERR("Error creating GLSL program\n");
-	gl::AttachShader(program, vertShader);
-	gl::AttachShader(program, fragShader);
-	gl::LinkProgram(program);
+	glAttachShader(program, vertShader);
+	glAttachShader(program, fragShader);
+	glLinkProgram(program);
 	GLint status;
-	gl::GetProgramiv(program, gl::LINK_STATUS, &status);
+	glGetProgramiv(program, GL_LINK_STATUS, &status);
 	if (GL_FALSE == status)
 	{
 		GLint logLen;
-		gl::GetProgramiv(program, gl::INFO_LOG_LENGTH, &logLen);
+		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &logLen);
 		if (logLen)
 		{
 			char * log = new char[logLen];
 			GLsizei written;
-			gl::GetProgramInfoLog(program, logLen, &written, log);
+			glGetProgramInfoLog(program, logLen, &written, log);
 			std::cout << log << '\n';
 			delete [] log;
 		}
 		ERR("Failed to link GLSL program.\n");
 	}
-	gl::UseProgram(program);
+	glUseProgram(program);
 
 	return;
 }
 
 GLuint attrib_location_get(const char * name )
 {
-	GLint l = gl::GetAttribLocation(program, name);
+	GLint l = glGetAttribLocation(program, name);
 	if(0 > l)
 	{
 		std::string msg = "Not found attrib name: ";
@@ -150,7 +158,7 @@ void init_scene(void)
 	open_window();
 	init_program();
 
-	gl::ClearColor(0.5f, 0.69f, 1.0f, 1.0f);
+	glClearColor(0.5f, 0.69f, 1.0f, 1.0f);
 
 	float pos_Data[] = {
 		-0.8f, -0.8f, 0.0f,
@@ -163,12 +171,12 @@ void init_scene(void)
 	//gl::BindVertexArray(hdl_VAO);
 
 	//gl::GenBuffers(1, &pos_Buf);
-  gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 	//gl::BindBuffer(gl::ARRAY_BUFFER, pos_Buf);
 	position_index = attrib_location_get("VertexPosition");
-	gl::EnableVertexAttribArray(position_index);
-	gl::VertexAttribPointer(position_index, 3, gl::FLOAT, false, 0, pos_Data);
+	glEnableVertexAttribArray(position_index);
+	glVertexAttribPointer(position_index, 3, GL_FLOAT, false, 0, pos_Data);
 	
 	/*
 	gl::GenBuffers(1, &pos_Buf);
@@ -192,10 +200,10 @@ void init_scene(void)
 //### Отображение контента
 void draw_scene(void)
 {
-	gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
 	//gl::BindVertexArray(hdl_VAO);
-	gl::DrawArrays(gl::TRIANGLES, 0, 3);
+	glDrawArrays(GL_TRIANGLES, 0, 3);
 	//gl::BindVertexArray(0);
 	return;
 }
@@ -217,10 +225,10 @@ void start(void)
 //###
 int main()
 {
-	try	{ 
-		start(); 
+	try	{
+		start();
 	}	catch(std::exception & e) {
-		std::cout << e.what() << '\n';;
+		std::cout << e.what() << '\n';
 		return EXIT_FAILURE;
 	}
 	catch(...)
@@ -232,3 +240,4 @@ int main()
 	std::cout << "\n\nComplete.\n";
 	return EXIT_SUCCESS;
 }
+
