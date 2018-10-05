@@ -1,0 +1,8 @@
+Список модулей:
+---------------
+
+enet - сеть "https://github.com/lsalzman/enet.git"
+glfw - OpenGL "https://github.com/glfw/glfw.git"
+gl3w - универсальный загрузчик функций OpenGL "https://github.com/skaslev/gl3w.git"
+imgui - GUI для OpenGL контекста "https://github.com/ocornut/imgui.git"
+
