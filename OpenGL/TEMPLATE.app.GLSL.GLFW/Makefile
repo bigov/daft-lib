@@ -23,7 +23,7 @@ endif
 
 CPPFLAGS =$(STD) -fexceptions -Werror -Woverloaded-virtual\
  -Wctor-dtor-privacy -Wnon-virtual-dtor -Weffc++ -Wconversion\
- -I/usr/include/freetype2
+ -I/usr/include/freetype2 -isystem ../../../LIBS/SRC/glm.0.9.8
 
 all: clean link start
 

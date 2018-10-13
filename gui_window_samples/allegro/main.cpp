@@ -37,8 +37,8 @@ int main(int, char**)
 
         if(redraw && al_is_event_queue_empty(queue))
         {
-            al_clear_to_color(al_map_rgb(0, 0, 0));
-            al_draw_text(font, al_map_rgb(255, 255, 255), 160, 90, ALLEGRO_ALIGN_CENTRE, "Hello, World!");
+            al_clear_to_color(al_map_rgb(240, 240, 240));
+            al_draw_text(font, al_map_rgb(16, 16, 16), 160, 90, ALLEGRO_ALIGN_CENTRE, "Hello, World!");
             al_flip_display();
             redraw = false;
         }

@@ -43,9 +43,9 @@ void error_callback(int n, const char* descr)
 
 //## GLFW обработчик клавиатуры
 //
-void key_callback(GLFWwindow* window, int key, int sc, int ac, int md)
+void key_callback(GLFWwindow* window, int key, int, int ac, int)
 {
-	if (md != sc) md = sc; //!!!TODO!!! затычка
+	//if (md != sc) md = sc; //!!!TODO!!! затычка
 	if (key == GLFW_KEY_ESCAPE && ac == GLFW_RELEASE)
 		glfwSetWindowShouldClose(window, true);
 	return;
@@ -142,7 +142,7 @@ void init_opengl_content(void)
 	if (!glfwInit()) ERR("Error init GLFW lib.");
 
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	pWin = glfwCreateWindow(1024, 800, "OpenGL tests", NULL, NULL);
