@@ -1,43 +1,29 @@
+# ---------------------------------------------------------------------------
 #
 # Makefile for 
 #  - MINGW32-W64 on MS-Windows MSYS-2
-#  - ArchLinux
 #
+# ---------------------------------------------------------------------------
+# список имен исходных файлов (без расширения)
+NAMES = $(basename $(wildcard *.cpp)) $(basename $(wildcard *.c))
+# список имен объектных файлов
+OBJS = $(subst : , , $(NAMES:=.o))
 
-GCC=g++
+CPPFLAGS=-std=c++14 -fexceptions -Woverloaded-virtual -Wctor-dtor-privacy \
+ -Wnon-virtual-dtor -Weffc++ -Wconversion -Wold-style-cast -Wsign-conversion \
+ -Werror -Wall -Wextra -Wpedantic -Winit-self -Wunreachable-code
 
-OS_NAME =$(shell uname)
-ifneq (,$(findstring MSYS_NT,$(OS_NAME)))
-	D_OS   =-DMINGW64_NT
-	SUBSYS =-mwindows -Wl,-subsystem,windows
-	SUBLIB =-lmingw32 -lopengl32 -lglfw3
-	APPCMD =app.exe
-endif
+LDLIBS=-lmingw32 -lopengl32 -lglfw3
 
-ifneq (,$(findstring Linux,$(OS_NAME)))
-	D_OS   =-LINUX
-	SUBLIB =-lglfw -lGL -lm
-	APPCMD =./app
-endif
+all: main
 
-NAMES    =$(basename $(wildcard *.cpp)) $(basename $(wildcard *.c))
-OBJS     =$(patsubst %,obj/%,$(notdir $(subst : , , $(NAMES:=.o))))
-CPPFLAGS =$(D_OS) -std=c++14 $(SUBSYS)
-LDLIBS   =$(SUBLIB) -lpthread -lpng
+main: $(OBJS)
+	c++ -o app --static $(OBJS) $(LDLIBS) -mwindows -Wl,-subsystem,windows
 
-all: LINK_APP
-
-LINK_APP: $(OBJS)
-	c++ -o app --static $(OBJS) $(LDLIBS)
-	$(APPCMD)
-
-obj/%.o: %.cpp
+%.o: %.cpp
 	c++ $(CPPFLAGS) -c $^ -o $@
 
-obj/%.o: %.c
+%.o: %.c
 	gcc -c $^ -o $@
 
-clean:
-	rm ./obj/*.o $(APPCMD)
-
-.PHONY: all main clean
+.PHONY: all
