@@ -11,7 +11,7 @@ SET( CMAKE_VERBOSE_MAKEFILE ON )
 
 SET(EXEC_NAME "app" )
 
-SET(3DLIBS "../../../../extlibs/")
+SET(3DLIBS "../../../../LIBS/SRC/")
 
 # библиотека GLFW3
 SET(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "Build the GLFW example programs" FORCE)
@@ -21,7 +21,7 @@ SET(GLFW_VULKAN_STATIC OFF CACHE BOOL "Use the Vulkan" FORCE)
 add_subdirectory( "${3DLIBS}glfw" "glfw" EXCLUDE_FROM_ALL)
 
 # где искать заголовки
-include_directories( "${3DLIBS}glfw/include" "${3DLIBS}glm.old" )
+include_directories( "${3DLIBS}glfw/include" "${3DLIBS}glm.0.9.8" )
 SET( MY_FLAGS "-std=c++14" )
 
 if( ${CMAKE_SYSTEM_NAME} MATCHES "Linux" )

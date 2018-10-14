@@ -10,19 +10,19 @@ OS_NAME =$(shell uname)
 ifneq (,$(findstring Linux,$(OS_NAME)))
 	APPNAME =app
 	APPCMD  =./app
-	STD     =-std=c++14
+	STD     =-std=c++17
 	LDLIBS  =-lGL -lglfw -lm
 	CLEAR   =rm -frd
 else
 	APPNAME =app.exe
 	APPCMD  =app.exe
-	STD     =-std=c++14 --static
+	STD     =-std=c++17 --static
 	LDLIBS  =-lmingw32 -lopengl32 -lglfw3 -lgdi32
 	CLEAR   =DEL /Q /S
 endif
 
 CPPFLAGS =$(STD) -fexceptions -Werror -Woverloaded-virtual -Wctor-dtor-privacy\
- -Wnon-virtual-dtor -Weffc++ -Wconversion
+ -Wnon-virtual-dtor -Weffc++ -Wconversion -isystem../../../../LIBS/SRC/glm.0.9.8
 
 all: clean link start
 
