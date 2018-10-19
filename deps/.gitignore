@@ -1,0 +1,17 @@
+_bin_
+_bin
+_dbg_
+_dbg
+CMakeLists.txt.user
+CMakeLists.txt.user.*
+bin
+*.dll
+*.exe
+*.o
+*~
+*.swp
+tags
+*.so
+*.so.*
+*.pyc
+.back
