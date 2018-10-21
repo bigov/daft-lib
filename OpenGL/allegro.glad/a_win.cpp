@@ -16,11 +16,15 @@ void window_create(void)
   al_register_event_source(queue, al_get_timer_event_source(timer));
 
   al_set_new_display_flags(ALLEGRO_OPENGL);
-  al_set_new_display_option(ALLEGRO_OPENGL_MAJOR_VERSION, 3, ALLEGRO_SUGGEST);
-  al_set_new_display_option(ALLEGRO_OPENGL_MINOR_VERSION, 2, ALLEGRO_SUGGEST);
+  al_set_new_display_option(ALLEGRO_OPENGL_MAJOR_VERSION, 3, ALLEGRO_REQUIRE);
+  al_set_new_display_option(ALLEGRO_OPENGL_MINOR_VERSION, 2, ALLEGRO_REQUIRE);
   display = al_create_display(640, 480);
   if(nullptr == display) ERR ("failed to create display!\n");
   al_set_current_opengl_context(display);
+
+  if(!gladLoadGL()) { ERR("FAILURE: can't load GLAD."); }
+  std::cout << "OpenGL Version: "
+    << GLVersion.major << "." << GLVersion.minor << "\n";
 
   return;
 }
