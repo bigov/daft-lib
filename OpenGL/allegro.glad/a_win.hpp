@@ -1,8 +1,8 @@
-/* filename: glfw_win.hpp
+/* filename: a_win.hpp
  *
  */
-#ifndef glfw_win_hpp
-#define glfw_win_hpp
+#ifndef A_WIN_HPP
+#define A_WIN_HPP
 
 #include "main.hpp"
 #include <allegro5/allegro5.h>

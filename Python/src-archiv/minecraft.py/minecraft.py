@@ -8,6 +8,13 @@ from pyglet.gl import *
 from pyglet.graphics import TextureGroup
 from pyglet.window import key, mouse
 
+try:
+    # Python 2
+    xrange
+except NameError:
+    # Python 3, xrange is now named range
+    xrange = range
+
 TICKS_PER_SEC = 60
 
 # Size of sectors used to ease block loading.

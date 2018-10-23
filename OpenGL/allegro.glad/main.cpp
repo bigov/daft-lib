@@ -14,11 +14,11 @@ int main(int, char**)
   try
   {
     window_create();
-    /*
+
     if(!gladLoadGL()) { ERR("FAILURE: can't load GLAD."); }
     std::cout << "OpenGL Version " << GLVersion.major
       << " " << GLVersion.minor << " loaded\n";
-    */
+
     gl_init_program();
     gl_init_scene();
     while(window_run()) draw_scene();

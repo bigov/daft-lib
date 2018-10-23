@@ -1,3 +1,7 @@
+/* filename: "a_win.cpp"
+ *
+ */
+
 #include "a_win.hpp"
 
 ALLEGRO_DISPLAY*     display = nullptr;
@@ -22,9 +26,12 @@ void window_create(void)
   if(nullptr == display) ERR ("failed to create display!\n");
   al_set_current_opengl_context(display);
 
-  if(!gladLoadGL()) { ERR("FAILURE: can't load GLAD."); }
-  std::cout << "OpenGL Version: "
-    << GLVersion.major << "." << GLVersion.minor << "\n";
+  // --> this rows present in the main.cpp:
+  //
+  //  if(!gladLoadGL()) { ERR("FAILURE: can't load GLAD."); }
+  //  std::cout << "OpenGL Version: "
+  //    << GLVersion.major << "." << GLVersion.minor << "\n";
+  // --/
 
   return;
 }

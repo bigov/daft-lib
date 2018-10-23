@@ -1,7 +1,7 @@
 /* gtkmm example
  *
  */
-#include <gtkmm.h>
+#include "messageslist.h"
 
 int main(int argc, char* argv[])
 {

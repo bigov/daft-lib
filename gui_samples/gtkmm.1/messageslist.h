@@ -1,6 +1,7 @@
 /*
  *  https://developer.gnome.org/gtkmm-tutorial/stable/chapter-introduction.html.en
- * */
+ * 
+ */
 
 #ifndef GTKMM_EXAMPLE_MESSAGESLIST_H
 #define GTKMM_EXAMPLE_MESSAGESLIST_H
