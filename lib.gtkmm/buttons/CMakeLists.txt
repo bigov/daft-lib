@@ -33,6 +33,7 @@ link_directories( ${GTKMM_LIBRARY_DIRS} )
 include_directories( ${GTKMM_INCLUDE_DIRS} )
 
 SET( APP "bin-go" )
-add_executable( ${APP} "main.cc" )
+add_executable( ${APP} "main.cpp" )
 target_link_libraries( ${APP} ${GTKMM_LIBRARIES} )
 
+file( COPY "${CMAKE_SOURCE_DIR}/open.xpm" DESTINATION "${CMAKE_BINARY_DIR}/" )
