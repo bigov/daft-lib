@@ -34,7 +34,7 @@ hw::hw(int w, int h)
   mBtn1.add_pixlabel("open.xpm", "open");
 
   mBtn2.signal_clicked().connect(sigc::mem_fun(*this, sig_b2));
-  mBtn2.add_label("_HELLO!", true);
+  mBtn2.add_label("cancel", true);
 
   mFrame.set_label(" framed location ");
   mFrame.add(mBox);
@@ -57,7 +57,7 @@ void hw::sig_b1(void)
 
 void hw::sig_b2(void)
 {
-  std::cout << "Hello, all!\n";
+  hide();
   return;
 }
 

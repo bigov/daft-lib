@@ -8,8 +8,15 @@ hello_world::hello_world() : mButton("Hello World")
   mButton.signal_clicked().connect(sigc::mem_fun(*this, 
       &hello_world::on_button_clicked));
 
-  add(mButton);
-  mButton.show();
+  add(WinBox);
+  WinBox.set_border_width(4);
+
+  WinBox.pack_start(InfoLabel);
+  InfoLabel.set_markup("First <b>Hello Word</b> application\n");
+
+  WinBox.pack_start(mButton);
+
+  show_all();
 }
 
 hello_world::~hello_world() { }

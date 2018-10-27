@@ -1,8 +1,7 @@
 #ifndef HELLOWORLD_H
 #define HELLOWORLD_H
 
-#include <gtkmm/button.h>
-#include <gtkmm/window.h>
+#include <gtkmm.h>
 
 class hello_world : public Gtk::Window
 {
@@ -15,7 +14,9 @@ class hello_world : public Gtk::Window
     void on_button_clicked();
 
     //Member wiget:
+    Gtk::Box WinBox {Gtk::ORIENTATION_VERTICAL};
     Gtk::Button mButton;
+    Gtk::Label InfoLabel {};
 };
 
 #endif // HELLOWORLD_H
