@@ -9,10 +9,7 @@
 #define __TOOLS_HPP__
 
 #include <iostream>
-#include <fstream>
 #include <chrono>
-#include <vector>
-#include <unordered_map>
 
 #include "gl_core_3_3.h"
 #define GLM_FORCE_RADIANS
@@ -22,12 +19,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
-#include <png.h>
-#include <ft2build.h>
-#include <freetype/freetype.h>
-
-#include "io.hpp"
 
 #define ERR throw std::runtime_error
 

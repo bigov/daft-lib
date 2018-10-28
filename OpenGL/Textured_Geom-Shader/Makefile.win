@@ -8,9 +8,18 @@ OBJ    =gl_core_3_3.o tools.o io.o
 
 CPPFLAGS =-std=c++14 --static -fexceptions -Werror -Woverloaded-virtual\
  -Wctor-dtor-privacy -Wnon-virtual-dtor -Weffc++ -Wconversion\
- -Wsign-conversion
+ -Wsign-conversion -mms-bitfields -Id:/MSYS2/mingw64/include/freetype2 \
+ -Id:/MSYS2/mingw64/include/libpng16 \
+ -Id:/MSYS2/mingw64/include -Id:/MSYS2/mingw64/include/harfbuzz \
+ -Id:/MSYS2/mingw64/include/glib-2.0 -Id:/MSYS2/mingw64/lib/glib-2.0/include
 
-LDLIBS =-lmingw32 -lopengl32 -lglfw3 -lgdi32 -lfreetype -lpng16 -lz -lm
+LDLIBS =-lmingw32 -lopengl32 -lglfw3 -lgdi32 -lharfbuzz -lfreetype -lpng16 -lz -lm \
+ -lintl -liconv -lz  -ltiff -lvorbisfile -lvorbis -logg -lcairo -lgobject-2.0 \
+ -lfontconfig -lglib-2.0 -llzma -ljpeg -lstdc++ -lmingw32 \
+ -mwindows -Wl,--no-undefined -lm -ldinput8 -ldxguid -ldxerr8 -luser32 \
+ -limm32 -loleaut32 -lshell32 -lversion -luuid -static-libgcc -lusp10 -lmsimg32 \
+ -lgdi32 -lpixman-1 -lffi -lexpat -lfreetype -lbz2 -lpng16 -lz -lws2_32 -lole32 \
+ -lwinmm -lshlwapi -lpcre  -lintl -liconv -lm
 
 all: link start
 
