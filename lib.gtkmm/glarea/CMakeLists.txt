@@ -32,14 +32,10 @@ pkg_check_modules( GTKMM REQUIRED gtkmm-3.0 epoxy)
 link_directories( ${GTKMM_LIBRARY_DIRS} )
 include_directories( ${GTKMM_INCLUDE_DIRS} )
 
-# Надо запустить:
+# Чтобы собрать файл "shaders.c", надо запустить:
 #   glib-compile-resources --generate-source shaders.xml
-#
-# соберется файл:
-#   shaders.c
-#
+
 SET( APP "bin-go" )
-SET( SRC "shaders.c" "glarea.cpp" )
+SET( SRC "shaders.c" "main.cpp" "glarea.cpp" )
 add_executable( ${APP} "${SRC}" )
 target_link_libraries( ${APP} ${GTKMM_LIBRARIES} )
-
