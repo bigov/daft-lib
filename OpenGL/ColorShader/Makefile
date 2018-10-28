@@ -4,13 +4,13 @@
 #
 
 APPCMD =app.exe
-OBJ    =gl_core_3_3.o tools.o
+OBJ    =tools.o
 
-CPPFLAGS =-std=c++14 --static -fexceptions -Werror -Woverloaded-virtual\
+CPPFLAGS =-std=c++17 -fexceptions -Werror -Woverloaded-virtual\
  -Wctor-dtor-privacy -Wnon-virtual-dtor -Weffc++ -Wconversion\
- -Wsign-conversion
+ -Wsign-conversion -mwindows -Wl,-subsystem,windows
 
-LDLIBS =-lmingw32 -lopengl32 -lglfw3 -lgdi32
+LDLIBS =-lepoxy.dll -lglfw3 -lgdi32
 
 all: link start
 

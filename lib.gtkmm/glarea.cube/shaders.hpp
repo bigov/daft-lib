@@ -9,7 +9,7 @@
 #define GLSL(src) "#version 330\n" #src
 
 //### Код вершинного шейдера
-const GLchar * vert_shader = GLSL (
+const GLchar* vert_shader = GLSL (
 
 in vec3 pos;
 
@@ -20,7 +20,7 @@ void main()
 );
 
 //### Код геометрического шейдера
-const GLchar * geom_shader = GLSL (
+const GLchar* geom_shader = GLSL (
 
 layout(points) in;
 layout(triangle_strip, max_vertices = 26) out;
@@ -106,7 +106,7 @@ void main()
 );
 
 //### Код фрагментного шейдера
-const GLchar * frag_shader = GLSL (
+const GLchar* frag_shader = GLSL (
 in vec4 fColor;
 flat in int enable;
 out vec4 outColor;

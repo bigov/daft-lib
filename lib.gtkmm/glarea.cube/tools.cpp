@@ -6,21 +6,12 @@
 #include "tools.hpp"
 #include "shaders.hpp"
 
-GLFWwindow * pWin = nullptr;
 GLuint shaderProgram = 0;
 
-//### GLFW обработчик ошибок GLFW окна
+//### обработчик ошибок
 void error_callback(int n, const char* descr)
 {
   ERR(std::string("\n[GLFW] error "+std::to_string(n)+": "+descr+'\n'));
-  return;
-}
-
-//### GLFW обработчик клавиатуры
-void key_callback(GLFWwindow* window, int key, int, int ac, int)
-{
-  if (key == GLFW_KEY_ESCAPE && ac == GLFW_RELEASE)
-    glfwSetWindowShouldClose(window, true);
   return;
 }
 
@@ -110,23 +101,3 @@ GLint get_uniform_location(const char * attr)
   if (0 > posAttrib) ERR(std::string("Can't get uniform: " + attr_name));
   return posAttrib;
 }
-
-//### Создание окна
-void init_opengl_content(void)
-{
-  glfwSetErrorCallback(error_callback);
-  if (!glfwInit()) ERR("Error init GLFW lib.");
-
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-  pWin = glfwCreateWindow(1024, 800, "GLSL learn", NULL, NULL);
-  if (nullptr == pWin) ERR("Creating Window fail.");
-  glfwMakeContextCurrent(pWin);
-  glfwSwapInterval(0);
-  glfwSetKeyCallback(pWin, key_callback);
-
-  return;
-}
-
