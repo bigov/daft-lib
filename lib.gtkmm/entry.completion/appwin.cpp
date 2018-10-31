@@ -51,8 +51,7 @@ void app_win::init_completeion_list(void)
 
   // Заполнение списка
   unsigned int id = 0;
-  Gtk::TreeRow row {};
-
+  Gtk::TreeRow
   row = *(LSRows->append());
   row[TreeMRecs.col_id] = ++id;
   row[TreeMRecs.col_text] = "Adriano Chellentano";
