@@ -3,6 +3,9 @@
  */
 #include "appwin.hpp"
 
+///
+/// \brief app_win::app_win
+///
 app_win::app_win(void)
 {
   set_size_request(200, 200);
@@ -11,109 +14,90 @@ app_win::app_win(void)
 
   add(mVBox);
 
-  mEntry.set_max_length(50);
-  mEntry.set_text("Hello");
-
-  //mVBox.add(mEntry);
   mVBox.pack_start(mEntry, Gtk::PACK_SHRINK);
   mVBox.pack_start(mLabel, Gtk::PACK_EXPAND_WIDGET);
-
-  mVBox.add(mHBox);
-  mHBox.set_border_width(8);
-
-  mHBox.add(mCheckButtonEditable);
-  mCheckButtonEditable.signal_toggled().connect(
-    sigc::mem_fun(*this, &app_win::on_chexkbox_editable_toggled));
-  mCheckButtonEditable.set_active(true);
-
-  mHBox.add(mCheckButtonVisible);
-  mCheckButtonVisible.signal_toggled().connect(
-    sigc::mem_fun(*this, &app_win::on_checkbox_visibility_toggled));
-  mCheckButtonVisible.set_active(true);
-
   mVBox.pack_start(mButtonClose, Gtk::PACK_SHRINK);
+
+  mEntry.set_max_length(50);
+  mEntry.set_text("Hello");
 
   mButtonClose.signal_clicked().connect(
     sigc::mem_fun(*this, &app_win::on_button_close));
   mButtonClose.set_can_default();
   mButtonClose.grab_default();
 
-  auto completion = Gtk::EntryCompletion::create();
-  mEntry.set_completion(completion);
+  init_completeion_list();
+  show_all_children();
+  return;
+}
 
-  // Создание списка полей
-  auto refCompletionModel = Gtk::ListStore::create(TreeModColRecord);
-  completion->set_model(refCompletionModel);
+///
+/// \brief app_win::init_completeion_list
+///
+void app_win::init_completeion_list(void)
+{
+  auto LSRows = Gtk::ListStore::create(TreeMRecs);
+  auto EntryComplet = Gtk::EntryCompletion::create();
+  EntryComplet->set_model(LSRows);
+  //display text in the entry when a match is found.
+  EntryComplet->set_text_column(TreeMRecs.col_text);
 
-  // можно использовать фильтр отбора полей
+  mEntry.set_completion(EntryComplet);
+
+  // Для сокращения длины списка выбора можно использовать фильтр:
+  //
   // completion->set_match_func(
   //    sigc::mem_fun(*this, &app_win::on_complete_match));
 
   // Заполнение списка
-  unsigned int id = 0; auto
+  unsigned int id = 0;
+  Gtk::TreeRow row {};
 
-  row = *(refCompletionModel->append());
-  row[TreeModColRecord.m_col_id] = ++id;
-  row[TreeModColRecord.m_col_name] = "Adriano Chellentano";
+  row = *(LSRows->append());
+  row[TreeMRecs.col_id] = ++id;
+  row[TreeMRecs.col_text] = "Adriano Chellentano";
 
-  row = *(refCompletionModel->append());
-  row[TreeModColRecord.m_col_id] = ++id;
-  row[TreeModColRecord.m_col_name] = "Alan Zee";
+  row = *(LSRows->append());
+  row[TreeMRecs.col_id] = ++id;
+  row[TreeMRecs.col_text] = "Alan Zee";
 
-  row = *(refCompletionModel->append());
-  row[TreeModColRecord.m_col_id] = ++id;
-  row[TreeModColRecord.m_col_name] = "Bob Dryoo";
+  row = *(LSRows->append());
+  row[TreeMRecs.col_id] = ++id;
+  row[TreeMRecs.col_text] = "Bob Dryoo";
 
-  row = *(refCompletionModel->append());
-  row[TreeModColRecord.m_col_id] = ++id;
-  row[TreeModColRecord.m_col_name] = "Billy Joe";
+  row = *(LSRows->append());
+  row[TreeMRecs.col_id] = ++id;
+  row[TreeMRecs.col_text] = "Billy Joe";
 
-  //Tell the completion what model column to use to
-  //- look for a match (when we use the default matching, instead of
-  //  set_match_func().
-  //- display text in the entry when a match is found.
-  completion->set_text_column(TreeModColRecord.m_col_name);
+  // Возможность предложить выбор дополнительных действий, если в списке
+  // не оказалось подходящего элемента. Меню этих действий добавляется
+  // в нижнюю часть списка:
 
-  mCompletionActions[0] = "Use Wizzard";
-  mCompletionActions[1] = "Browse file";
+  mActions[0] = "Use Wizzard";
+  mActions[1] = "Browse file";
+  for(const auto& the_pair: mActions)
+    EntryComplet->insert_action_text(the_pair.second, the_pair.first);
 
-  for(const auto& the_pair: mCompletionActions)
-  {
-    auto row_id = the_pair.first;
-    auto title  = the_pair.second;
-    completion->insert_action_text(title, row_id);
-  }
-
-  completion->signal_action_activated().connect(sigc::mem_fun(
-    *this, &app_win::on_completion_activated));
-
-  show_all_children();
+  EntryComplet->signal_action_activated().connect(sigc::mem_fun(
+    *this, &app_win::on_select_action));
 
   return;
 }
 
-void app_win::on_checkbox_visibility_toggled(void)
-{
-  mEntry.set_visibility(mCheckButtonVisible.get_active());
-  return;
-}
-
-void app_win::on_chexkbox_editable_toggled(void)
-{
-  mEntry.set_editable(mCheckButtonEditable.get_active());
-  return;
-}
-
+///
+/// \brief app_win::on_button_close
+///
 void app_win::on_button_close(void)
 {
   hide();
   return;
 }
 
-/* You can do more complex matching with a handler like this.
- * For instance, you could check for substrings inside the string instead of the start,
- * or you could look for the key in extra model columns as well as the model column that will be displayed.
- * The code here is not actually more complex - it's a reimplementation of the default behaviour.
+/* You can do more complex matching with a handler like this. For instance, you
+ * could check for substrings inside the string instead of the start, or you
+ * could look for the key in extra model columns as well as the model column
+ * that will be displayed. The code here is not actually more complex - it's
+ * a reimplementation of the default behaviour.
  *
 bool ExampleWindow::on_completion_match(const Glib::ustring& key, const
         Gtk::TreeModel::const_iterator& iter)
@@ -137,12 +121,14 @@ bool ExampleWindow::on_completion_match(const Glib::ustring& key, const
 }
 */
 
-//
-//
-void app_win::on_completion_activated(int index)
+///
+/// \brief app_win::on_completion_activated
+/// \param index
+///
+void app_win::on_select_action(int index)
 {
-  type_actions_map::iterator iter = mCompletionActions.find(index);
-  if(iter != mCompletionActions.end())
+  auto iter = mActions.find(index);
+  if(iter != mActions.end())
   {
     Glib::ustring title = iter->second;
     std::cout << "Selected: " << title << std::endl;
@@ -150,3 +136,5 @@ void app_win::on_completion_activated(int index)
   return;
 }
 
+app_win::~app_win(void) {return;}
+app_win::tree_rec::~tree_rec(void) {return;}

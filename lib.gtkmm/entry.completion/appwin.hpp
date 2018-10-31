@@ -10,37 +10,36 @@
 class app_win : public Gtk::Window
 {
   public:
-    app_win();
-    ~app_win() {}
+    app_win(void);
+    virtual ~app_win(void);
 
   protected:
-    //signals
-    void on_chexkbox_editable_toggled();
-    void on_checkbox_visibility_toggled();
     void on_button_close();
-    void on_completion_activated(int index);
+    void on_select_action(int index);
+    void init_completeion_list(void);
+
     //See the comment in the implementation:
     //bool on_completion_match(const Glib::ustring& key,
     //        const Gtk::TreeModel::const_iterator& iter);
 
-    class model_columns : public Gtk::TreeModel::ColumnRecord
+    class tree_rec : public Gtk::TreeModel::ColumnRecord
     {
     public:
-      model_columns(void)
+      tree_rec(void)
       {
-        add(m_col_id);
-        add(m_col_name);
+        add(col_id);
+        add(col_text);
       }
-      Gtk::TreeModelColumn<unsigned int> m_col_id {};
-      Gtk::TreeModelColumn<Glib::ustring> m_col_name {};
+      virtual ~tree_rec(void);
+
+      Gtk::TreeModelColumn<unsigned int> col_id {};
+      Gtk::TreeModelColumn<Glib::ustring> col_text {};
     };
 
-    model_columns TreeModColRecord {};
+    tree_rec TreeMRecs {};
 
-    typedef std::map<int, Glib::ustring> type_actions_map;
-    type_actions_map mCompletionActions {};
+    std::map<int, Glib::ustring> mActions {};
 
-    Gtk::Box mHBox { Gtk::ORIENTATION_HORIZONTAL };
     Gtk::Box mVBox { Gtk::ORIENTATION_VERTICAL };
     Gtk::Entry mEntry {};
     Gtk::Label mLabel {
