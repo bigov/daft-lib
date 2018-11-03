@@ -28,10 +28,10 @@ class app_win : public Gtk::Window
     bool on_key_press_event     (GdkEventKey* event) override;
     bool on_key_release_event   (GdkEventKey* event) override;
 
-    bool entryKeyRelease        (GdkEventKey* event);
-    bool gridKeyRelease         (GdkEventKey* event);
-    bool windowKeyReleaseBefore (GdkEventKey* event);
-    bool windowKeyRelease       (GdkEventKey* event);
+    bool entryKeyRelease   (GdkEventKey* event);
+    bool gridKeyRelease    (GdkEventKey* event);
+    bool windowKeyReleaseA (GdkEventKey* event);
+    bool windowKeyReleaseB (GdkEventKey* event);
 
 };
 

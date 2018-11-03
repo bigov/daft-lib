@@ -14,7 +14,7 @@
 
 --- filename: tplibs.cmake --->
 SET( TP_LIBS "D:/DevCpp/WORKSPACE/LIBS" )
-<--- /filename: CMakeLists.txt ---
+<--- /filename: tplibs.cmake---
 
 --- filename tplibs.vim --->
 let g:tplibs = ' D:/DevCpp/WORKSPACE/LIBS'

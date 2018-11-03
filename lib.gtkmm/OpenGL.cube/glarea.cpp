@@ -45,8 +45,13 @@ win_gl::win_gl()
 ///
 bool win_gl::on_timer(int)
 {
+  static int loops = 150;
   // Тут вызывается функция, привязанная в конструкторе класса
   // через вызов "WinGlArea.signal_render().connect(...)"
   WinGlArea.queue_draw();
-  return true;
+
+  // Поворот продолжается 150 циклов - пока функция возвращает значение "true".
+  // После возврата значения "false" таймер повтора вызова отключается.
+  if(--loops > 0) return true;
+  else return false;
 }

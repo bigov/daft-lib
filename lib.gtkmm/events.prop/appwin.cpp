@@ -30,8 +30,12 @@ app_win::app_win(void)
   mGrid.signal_key_release_event().connect(
     sigc::mem_fun(*this, &app_win::gridKeyRelease));
 
-  signal_key_release_event().connect(sigc::mem_fun(*this, &app_win::windowKeyReleaseBefore), false);
-  signal_key_release_event().connect(sigc::mem_fun(*this, &app_win::windowKeyRelease));
+  signal_key_release_event().connect(
+    sigc::mem_fun(*this, &app_win::windowKeyReleaseA), false
+  );
+  signal_key_release_event().connect(
+    sigc::mem_fun(*this, &app_win::windowKeyReleaseB)
+  );
 
   BoxMain.pack_end(BoxBtns, Gtk::PACK_SHRINK);
 
@@ -89,9 +93,9 @@ bool app_win::gridKeyRelease(GdkEventKey* /* event */ )
 ///
 //
 //
-bool app_win::windowKeyReleaseBefore(GdkEventKey* /* event */ )
+bool app_win::windowKeyReleaseA(GdkEventKey* /* event */ )
 {
-  std::cout << "Window before" << std::endl;
+  std::cout << "Window A" << std::endl;
   return false;
 }
 
@@ -109,12 +113,13 @@ bool app_win::on_key_release_event(GdkEventKey* key_event)
 //
 // This will set the entry's text in the label, every time a key is pressed.
 //
-bool app_win::windowKeyRelease(GdkEventKey* /* event */ )
+bool app_win::windowKeyReleaseB(GdkEventKey* /* event */ )
 {
-  std::cout << "Window after";
+  std::cout << "Window B";
 
-  //checking if the entry is on focus, otherwise the label would get changed by pressing keys
-  //on the window (when the entry is not on focus), even if m_checkbutton_can_propagate wasn't active
+  // checking if the entry is on focus, otherwise the label would get changed
+  // by pressing keys on the window (when the entry is not on focus), even
+  // if m_checkbutton_can_propagate wasn't active
   if(mEntry.has_focus())
   {
     mLabel.set_text(mEntry.get_text());
