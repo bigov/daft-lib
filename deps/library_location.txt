@@ -1,0 +1,45 @@
+
+===== INFO =====
+
+Внешние библиотеки, которые необходимы для сборки некоторых примеров, могут
+располагаться на разных рабочих компьютерах в разных местах. Поэтому в этой
+папке должны располагаться файлы, с помощью которых настраиваются пути поиска
+необходимых библиотек. Эти файлы отличаются на разных компьютерах, поэтому они
+игнорируются утилитой "git":
+
+  * tplibs.cmake
+  * tplibs.vim
+
+Содержимое файлов (пример):
+
+--- filename: tplibs.cmake --->
+SET( TP_LIBS "D:/DevCpp/WORKSPACE/LIBS" )
+<--- /filename: CMakeLists.txt ---
+
+--- filename tplibs.vim --->
+let g:tplibs = ' D:/DevCpp/WORKSPACE/LIBS'
+<--- /filename tplibs.vim ---
+
+
+===== CMAKE =====
+
+Файл для "cmake" подключается просто:
+--- content cmake-config --->
+...
+include( "../../deps/tplibs.cmake")
+...
+<--- /content cmake-config ---
+
+
+===== VIM =====
+
+Файл для синтаксического анализатора VIM подключается так:
+--- content vim-config --->
+...
+if filereadable('../../deps/tplibs.vim')
+  source '../../deps/tplibs.vim'
+  let g:include_dirs.='-isystem'.g:tplibs
+endif
+...
+<--- /content vim-config ---
+
