@@ -4,42 +4,37 @@
 Внешние библиотеки, которые необходимы для сборки некоторых примеров, могут
 располагаться на разных рабочих компьютерах в разных местах. Поэтому в этой
 папке должны располагаться файлы, с помощью которых настраиваются пути поиска
-необходимых библиотек. Эти файлы отличаются на разных компьютерах, поэтому они
-игнорируются утилитой "git":
+необходимых библиотек для обеспечения работы "cmake" и для синтаксического
+анализатора "vim":
 
   * tplibs.cmake
   * tplibs.vim
 
-Содержимое файлов (пример):
+Так как на разных компьютерах библиотеки могут располагаться в разных местах,
+то эти файлы игнорируются утилитой контроля версий "git". Пример настройки:
 
 --- filename: tplibs.cmake --->
 SET( TP_LIBS "D:/DevCpp/WORKSPACE/LIBS" )
 <--- /filename: tplibs.cmake---
 
 --- filename tplibs.vim --->
-let g:tplibs = ' D:/DevCpp/WORKSPACE/LIBS'
+let g:tp_libs='D:/DevCpp/WORKSPACE/LIBS'
 <--- /filename tplibs.vim ---
 
 
-===== CMAKE =====
+===== добавить в файл "CMakeLists.txt" в папке проекта: =====
 
-Файл для "cmake" подключается просто:
---- content cmake-config --->
 ...
 include( "../../deps/tplibs.cmake")
 ...
-<--- /content cmake-config ---
 
 
-===== VIM =====
+===== добавить в файл ".vim" в папке проекта: =====
 
-Файл для синтаксического анализатора VIM подключается так:
---- content vim-config --->
 ...
-if filereadable('../../deps/tplibs.vim')
-  source '../../deps/tplibs.vim'
-  let g:include_dirs.='-isystem'.g:tplibs
+let s:tp_file_name='../deps/tplibs.vim'
+if filereadable(s:tp_file_name)
+  exec('source '.s:tp_file_name)
 endif
 ...
-<--- /content vim-config ---
 
