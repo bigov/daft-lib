@@ -21,18 +21,19 @@ endif()
 SET( SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE )
 SET( CMAKE_VERBOSE_MAKEFILE OFF )
 
-SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -mwindows \
- -Wl,-subsystem,windows")
-#-Werror -Wall -Wextra -Wpedantic -Woverloaded-virtual \
-# -Wctor-dtor-privacy -Wnon-virtual-dtor -Wconversion -Wsign-conversion \
-# -Winit-self -Wunreachable-code -Weffc++ -Wold-style-cast" )
+SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17" )
+#  -Werror -Wall -Wextra \
+#  -Wpedantic -Woverloaded-virtual -Wctor-dtor-privacy -Wnon-virtual-dtor \
+#  -Wconversion -Wsign-conversion -Winit-self -Wunreachable-code -Weffc++ \
+#  -Wold-style-cast" )
 
 find_package( PkgConfig REQUIRED )
-pkg_check_modules( GTKMM REQUIRED gtkmm-3.0 epoxy)
+pkg_check_modules( GTKMM REQUIRED gtkmm-3.0 )
 link_directories( ${GTKMM_LIBRARY_DIRS} )
 include_directories( ${GTKMM_INCLUDE_DIRS} )
 
 SET( APP "bin-go" )
-SET( SRC "tools.cpp" "main.cpp" "glarea.cpp" )
-add_executable( ${APP} "${SRC}" )
+file( GLOB SRC_FILES "*.cpp" )
+add_executable( ${APP} "${SRC_FILES}" )
 target_link_libraries( ${APP} ${GTKMM_LIBRARIES} )
+

@@ -73,7 +73,7 @@ bool render_gl_content(const Glib::RefPtr<Gdk::GLContext>&)
 ///
 int main(int argc, char* argv[])
 {
-  auto app = Gtk::Application::create(argc, argv, "org.gtkmm.example");
+  auto app = Gtk::Application::create(argc, argv, "");
   win_gl OpenGLWindow;
   init_program();
   init_buffers();
