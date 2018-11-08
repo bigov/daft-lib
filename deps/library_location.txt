@@ -32,9 +32,17 @@ include( "../../deps/tplibs.cmake")
 ===== добавить в файл ".vim" в папке проекта: =====
 
 ...
-let s:tp_file_name='../deps/tplibs.vim'
+if !exists("g:include_dirs")
+  let g:include_dirs=''
+endif
+
+" Путь к файлу с настройкой локального пути к внешним библиотекам.
+let s:tp_file_name='../../deps/tplibs.vim'
+
+" в нем должна быть строка вида: let g:tp_libs='D:/dev/WORKSPACE/LIBS'
 if filereadable(s:tp_file_name)
   exec('source '.s:tp_file_name)
+  let g:include_dirs.=' -isystem '.g:tp_libs
 endif
 ...
 

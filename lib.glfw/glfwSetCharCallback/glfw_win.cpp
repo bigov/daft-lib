@@ -22,6 +22,14 @@ void key_callback(GLFWwindow* window, int key, int, int ac, int)
   return;
 }
 
+//### GLFW обработчик ввода символов
+void cb_chars_input(GLFWwindow*, unsigned int u)
+{
+  auto c = static_cast<unsigned char>(u);
+  std::cout << c;
+  return;
+}
+
 //### Создание окна
 void window_create(void)
 {
@@ -36,6 +44,7 @@ void window_create(void)
   glfwMakeContextCurrent(pWin);
   glfwSwapInterval(0);
   glfwSetKeyCallback(pWin, key_callback);
+  glfwSetCharCallback(pWin, cb_chars_input);
   return;
 }
 
