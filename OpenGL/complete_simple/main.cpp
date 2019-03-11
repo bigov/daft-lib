@@ -158,6 +158,7 @@ void init_scene(void)
   glGenVertexArrays(1, &vao_id);
   glBindVertexArray(vao_id);
 
+  //data buffer
   glGenBuffers(1, &data_buf);
   glBindBuffer(GL_ARRAY_BUFFER, data_buf);
   glBufferData(GL_ARRAY_BUFFER, data_size, pos_and_color, GL_STATIC_DRAW);
@@ -165,6 +166,7 @@ void init_scene(void)
   glVertexAttribPointer(attr_color, 3, GL_FLOAT, GL_TRUE, stride, reinterpret_cast<void*>(3*sizeof(GLfloat)));
   glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+  //index buffer
   glGenBuffers(1, &index_buf);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buf);
   GLuint idx[3] = {0, 1, 2};
