@@ -183,7 +183,6 @@ void show(GLFWwindow* win_ptr)
   create_program();
   init_scene();
 
-  std::chrono::milliseconds pause { 20 };
   while (!glfwWindowShouldClose(win_ptr))
   {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -205,7 +204,7 @@ void show(GLFWwindow* win_ptr)
 
     glfwSwapBuffers(win_ptr);
     glfwPollEvents();
-    std::this_thread::sleep_for(pause);
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
   }
   glfwDestroyWindow(win_ptr);
   glfwTerminate();
