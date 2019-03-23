@@ -17,7 +17,7 @@ endif
 all: clean main
 
 main:
-	$(CPP) main.cpp glad.c $(CPPFLAGS) -o $(BIN)
+	$(CPP) main.cpp glad/glad.c $(CPPFLAGS) -o $(BIN)
 	$(RUN_APP)
 
 clean:

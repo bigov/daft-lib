@@ -13,6 +13,7 @@ endif()
 
 project( render_in_buff )
 SET( EXEC_NAME "test" )
+include_directories("glad")
 
 SET( CMAKE_CXX_FLAGS "-m64 -std=c++17 -lpthread")
 
@@ -43,12 +44,16 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 # Relative paths are interpreted as relative to the current source directory
-SET (SRC_CODE main.cpp glad.c)
+SET (SRC_CODE main.cpp glad/glad.c)
+#file(GLOB SHADERS "*.glsl")
+#file(COPY ${SHADERS} DESTINATION ${CMAKE_BINARY_DIR})
+file(COPY "glsl" DESTINATION ${CMAKE_BINARY_DIR})
 
 # Библиотека GLFW
 find_package( PkgConfig REQUIRED )
 pkg_check_modules( GLFW REQUIRED glfw3 )
 
-add_executable( "${EXEC_NAME}" "${SRC_CODE}" )
-target_link_libraries( "${EXEC_NAME}" ${GLFW_LIBRARIES} )
+add_executable( ${EXEC_NAME} ${SRC_CODE} )
+target_link_libraries( ${EXEC_NAME} ${GLFW_LIBRARIES} )
+
 

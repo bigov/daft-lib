@@ -5,7 +5,7 @@
 #include <sys/stat.h>
 #include <fstream>
 
-#include "glad.h"
+#include "glad/glad.h"
 #include <GLFW/glfw3.h>
 
 #define ERR throw std::runtime_error
@@ -51,7 +51,7 @@ void key_callback(GLFWwindow* window, int, int, int, int)
 //## GLFW
 void error_callback(int error, const char* description)
 {
-  ERR("GLFW error " + std::to_string(error) + ": " + description);
+  ERR("GLFW ERROR[" + std::to_string(error) + "] " + description);
 }
 
 //## GLFW
@@ -59,6 +59,7 @@ GLFWwindow* glfw_win(void)
 {
   glfwSetErrorCallback(error_callback);
   if(!glfwInit()) ERR("Error init GLFW lib.");
+
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 
@@ -107,12 +108,12 @@ void create_program(void)
   GLuint fragShader = glCreateShader(GL_FRAGMENT_SHADER);
   if (!fragShader) ERR("Error create GL_FRAGMENT_SHADER");
 
-  auto Buff = read_file("vert.glsl");
+  auto Buff = read_file("glsl/vert.glsl");
   auto b = Buff.get();
   glShaderSource(vertShader, 1, &b, nullptr);
   compile_shader(vertShader);
 
-  Buff = read_file("frag.glsl");
+  Buff = read_file("glsl/frag.glsl");
   b = Buff.get();
   glShaderSource(fragShader, 1, &b, nullptr);
   compile_shader(fragShader);
