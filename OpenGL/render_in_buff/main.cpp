@@ -10,13 +10,14 @@
 
 #define ERR throw std::runtime_error
 
-GLuint
+static GLuint
   vao_id = 0,
   data_buf = 0,
   index_buf = 0,
+  program = 0,
   attr_position = 0,
-  attr_color = 0,
-  program = 0;
+  attr_color = 0;
+
 
 //## File read
 std::unique_ptr<char[]> read_file(const std::string &FNname)
@@ -43,13 +44,13 @@ std::unique_ptr<char[]> read_file(const std::string &FNname)
 }
 
 //## GLFW
-void key_callback(GLFWwindow* window, int, int, int, int)
+void key_callback (GLFWwindow* window, int, int, int, int)
 {
   glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
 //## GLFW
-void error_callback(int error, const char* description)
+void error_callback [[ noreturn ]] (int error, const char* description)
 {
   ERR("GLFW ERROR[" + std::to_string(error) + "] " + description);
 }
@@ -99,6 +100,16 @@ void compile_shader(GLuint shader)
   return;
 }
 
+
+//##
+GLuint gl_get_attrib(GLuint program, const std::string& attrib_name)
+{
+  GLint n = glGetAttribLocation(program, attrib_name.c_str());
+  if (n < 0) ERR ("ERROR: Not found GLSL attribute " + attrib_name);
+  return static_cast<GLuint>(n);
+}
+
+
 //## OpenGL
 void create_program(void)
 {
@@ -141,8 +152,8 @@ void create_program(void)
     ERR("Failed to link GLSL program.\n");
   }
   glUseProgram(program);
-  attr_position = glGetAttribLocation(program, "VertexPosition");
-  attr_color = glGetAttribLocation(program, "VertexColor");
+  attr_position = gl_get_attrib(program, "VertexPosition");
+  attr_color = gl_get_attrib(program, "VertexColor");
   glUseProgram(0);
 }
 
@@ -152,6 +163,8 @@ void init_scene(void)
   float pos_and_color[18] = { -0.8f, -0.8f, 0.0f, 0.4f, 1.0f, 0.4f,
                                0.8f, -0.8f, 0.0f, 1.0f, 0.4f, 0.4f,
                                0.0f,  0.8f, 0.0f, 1.0f, 1.0f, 0.4f };
+  GLuint index_data[3] = {0, 1, 2}; // index data array
+
   GLsizei stride = 6 * sizeof(GLfloat);
   GLsizei data_size = 3 * stride;
 
@@ -170,8 +183,7 @@ void init_scene(void)
   //index buffer
   glGenBuffers(1, &index_buf);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buf);
-  GLuint idx[3] = {0, 1, 2};
-  glBufferData(GL_ELEMENT_ARRAY_BUFFER, 3 * sizeof(float), idx, GL_STATIC_DRAW);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, 3 * sizeof(float), index_data, GL_STATIC_DRAW);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
   glBindVertexArray(0);
