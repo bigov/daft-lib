@@ -196,8 +196,6 @@ void init_pogram_buff()
   attr_buff_position = gl_get_attrib(frame_program, "VertexPosition");
   attr_buff_texcoord = gl_get_attrib(frame_program, "TextureCoord");
   attr_buff_texture = gl_get_uniform(frame_program, "texFramebuffer");
-  glActiveTexture(GL_TEXTURE1);
-  glUniform1i(attr_buff_texture, 1); // GL_TEXTURE1 == 1
   glUseProgram(0);
 }
 
@@ -242,6 +240,12 @@ bool init_framebuffer(GLsizei w, GLsizei h)
   glBufferData(GL_ARRAY_BUFFER, sizeof(Position), Position, GL_STATIC_DRAW);
   glEnableVertexAttribArray(attr_buff_position);
   glVertexAttribPointer(attr_buff_position, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+
+  // Назначить номер текстуры для использования во фрейм-буфере
+  glActiveTexture(GL_TEXTURE0);      // default = GL_TEXTURE0
+  glUseProgram(frame_program);
+  glUniform1i(attr_buff_texture, 0); // GL_TEXTURE1 == 1
+  glUseProgram(0);
 
   // Буфер UV координат текстуры, в которую рендерится сцена
   GLuint vbo_buff_tex = 0;
