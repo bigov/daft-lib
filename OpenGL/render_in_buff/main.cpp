@@ -10,7 +10,7 @@
 
 #define ERR throw std::runtime_error
 
-int win_w = 640, win_h = 480;
+static int win_w = 640, win_h = 480;
 
 static GLuint
   frame_buff_id = 0,
@@ -22,8 +22,10 @@ static GLuint
   attr_main_color = 0,
   attr_buff_position = 0,
   attr_buff_texcoord = 0,
-  attr_buff_texture = 0,
   buff_texture = 0;         // текстура рендера пространства
+
+static GLint attr_buff_texture = 0;
+
 
 static std::string
   main_vert_glsl {"glsl/main_vert.glsl"},
@@ -123,11 +125,11 @@ GLuint gl_get_attrib(GLuint program, const std::string& attrib_name)
 
 
 //##
-GLuint gl_get_uniform(GLuint program, const std::string& name )
+GLint gl_get_uniform(GLuint program, const std::string& name )
 {
   GLint l = glGetUniformLocation(program, name.c_str());
   if(l < 0) ERR ("ERROR: Not found uniform name: " + name);
-  return static_cast<GLuint>(l);
+  return l;
 }
 
 
@@ -265,8 +267,8 @@ bool init_framebuffer(GLsizei w, GLsizei h)
   glBindFramebuffer(GL_FRAMEBUFFER, frame_buff_id);
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, buff_texture, 0);
 
-  //GLenum b[1] = { GL_COLOR_ATTACHMENT0 }; //, GL_COLOR_ATTACHMENT1 };
-  //glDrawBuffers(1, b);
+  GLenum b[1] = { GL_COLOR_ATTACHMENT0 }; //, GL_COLOR_ATTACHMENT1 };
+  glDrawBuffers(1, b);
 
   GLuint rbuf = 0;
   glGenRenderbuffers(1, &rbuf);
