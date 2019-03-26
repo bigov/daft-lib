@@ -21,11 +21,9 @@ static GLuint
   attr_main_position = 0,
   attr_main_color = 0,
   attr_buff_position = 0,
-  attr_buff_texcoord = 0,
-  buff_texture = 0;         // текстура рендера пространства
+  attr_buff_texcoord = 0;
 
 static GLint attr_buff_texture = 0;
-
 
 static std::string
   main_vert_glsl {"glsl/main_vert.glsl"},
@@ -198,11 +196,12 @@ void init_pogram_buff()
   attr_buff_position = gl_get_attrib(frame_program, "VertexPosition");
   attr_buff_texcoord = gl_get_attrib(frame_program, "TextureCoord");
   attr_buff_texture = gl_get_uniform(frame_program, "texFramebuffer");
+  // GL-номер основной текстуры фрейм-буфера для рендера сцены
+  glUniform1i(attr_buff_texture, 0); // GL_TEXTURE0 -> 0
   glUseProgram(0);
 }
 
-//## ---
-void init_scene(void)
+void init_scene_vao(void)
 {                           //  x      y     z     r     g     b
   float pos_and_color[18] = { -0.8f, -0.8f, 0.0f, 0.4f, 1.0f, 0.4f,
                                0.8f, -0.8f, 0.0f, 1.0f, 0.4f, 0.4f,
@@ -213,10 +212,9 @@ void init_scene(void)
   glGenVertexArrays(1, &vao_main);
   glBindVertexArray(vao_main);
 
-  //data buffer
-  GLuint _vbo = 0;
-  glGenBuffers(1, &_vbo);
-  glBindBuffer(GL_ARRAY_BUFFER, _vbo);
+  GLuint vboid = 0;
+  glGenBuffers(1, &vboid);
+  glBindBuffer(GL_ARRAY_BUFFER, vboid);
   glBufferData(GL_ARRAY_BUFFER, data_size, pos_and_color, GL_STATIC_DRAW);
   glEnableVertexAttribArray(attr_main_position);
   glEnableVertexAttribArray(attr_main_color);
@@ -225,10 +223,8 @@ void init_scene(void)
   return;
 }
 
-//##
-bool init_framebuffer(GLsizei w, GLsizei h)
+void init_frame_vao(void)
 {
-  GLint lod = 0, frame = 0;
   GLfloat Position[8] = {-1.f,-1.f, 1.f,-1.f,-1.f, 1.f, 1.f, 1.f }; // 2D коорд. фрейма
   GLfloat Texcoord[8] = { 0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f }; // UV координаты
 
@@ -236,44 +232,53 @@ bool init_framebuffer(GLsizei w, GLsizei h)
   glBindVertexArray(vao_frame);
 
   // Буфер координат вершин фрейма, заполняющего окно приложения
-  GLuint vbo_buff_pos = 0;
-  glGenBuffers(1, &vbo_buff_pos);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo_buff_pos);
+  GLuint vbopos = 0;
+  glGenBuffers(1, &vbopos);
+  glBindBuffer(GL_ARRAY_BUFFER, vbopos);
   glBufferData(GL_ARRAY_BUFFER, sizeof(Position), Position, GL_STATIC_DRAW);
   glEnableVertexAttribArray(attr_buff_position);
   glVertexAttribPointer(attr_buff_position, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-  // Выбрать номер GL-текстуры для использования во фрейм-буфере
-  glActiveTexture(GL_TEXTURE0);      // default = GL_TEXTURE0
-  glUseProgram(frame_program);
-  glUniform1i(attr_buff_texture, 0); // GL_TEXTURE1 == 1
-  glUseProgram(0);
-
   // Буфер UV координат текстуры, в которую рендерится сцена
-  GLuint vbo_buff_tex = 0;
-  glGenBuffers(1, &vbo_buff_tex);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo_buff_tex);
+  GLuint vbotex = 0;
+  glGenBuffers(1, &vbotex);
+  glBindBuffer(GL_ARRAY_BUFFER, vbotex);
   glBufferData(GL_ARRAY_BUFFER, sizeof(Texcoord), Texcoord, GL_STATIC_DRAW);
   glEnableVertexAttribArray(attr_buff_texcoord);
   glVertexAttribPointer(attr_buff_texcoord, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+}
 
-  // Память под текстуру, в которую рендерится основная сцена
-  glGenTextures(1, &buff_texture);
-  glBindTexture(GL_TEXTURE_2D, buff_texture);
+bool init_framebuffer(GLsizei w, GLsizei h)
+{
+  GLint lod = 0, frame = 0;
+
+  // Основная текстура, в которую рендерится сцена
+  glActiveTexture(GL_TEXTURE0);
+  GLuint tex0 = 0;
+  glGenTextures(1, &tex0);
+  glBindTexture(GL_TEXTURE_2D, tex0);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
   glTexImage2D(GL_TEXTURE_2D, lod, GL_RGBA, w, h, frame, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
+  glActiveTexture(GL_TEXTURE1);
+  GLuint tex1 = 0;
+  glGenTextures(1, &tex1);
+  glBindTexture(GL_TEXTURE_2D, tex1);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32UI, w, h, 0, GL_RGB_INTEGER, GL_UNSIGNED_INT, nullptr);
+
   glGenFramebuffers(1, &frame_buff_id);
   glBindFramebuffer(GL_FRAMEBUFFER, frame_buff_id);
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, buff_texture, 0);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex0, 0);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, tex1, 0);
 
-  GLenum b[1] = { GL_COLOR_ATTACHMENT0 }; //, GL_COLOR_ATTACHMENT1 };
-  glDrawBuffers(1, b);
+  GLenum b[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+  glDrawBuffers(2, b);
 
-  GLuint rbuf = 0;
-  glGenRenderbuffers(1, &rbuf);
-  glBindRenderbuffer(GL_RENDERBUFFER, rbuf);
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbuf);
+  GLuint rbufid = 0;
+  glGenRenderbuffers(1, &rbufid);
+  glBindRenderbuffer(GL_RENDERBUFFER, rbufid);
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbufid);
   glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w, h);
 
   return glGetError() == GL_NO_ERROR;
@@ -287,16 +292,17 @@ void show(GLFWwindow* win_ptr)
 
   init_pogram_main();
   init_pogram_buff();
-  init_scene();
-  init_framebuffer(win_w, win_h);
+  init_scene_vao();
+  init_frame_vao();
+  if (!init_framebuffer(win_w, win_h)) ERR ("Can't init FrameBuffer");
 
   glBindFramebuffer(GL_FRAMEBUFFER, frame_buff_id);
   glBindVertexArray(vao_main);
   glUseProgram(main_program);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   glDrawArrays(GL_TRIANGLES, 0, 3);
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glBindVertexArray(vao_frame);
   glUseProgram(frame_program);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
