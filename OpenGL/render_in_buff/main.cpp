@@ -241,7 +241,7 @@ bool init_framebuffer(GLsizei w, GLsizei h)
   glEnableVertexAttribArray(attr_buff_position);
   glVertexAttribPointer(attr_buff_position, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-  // Назначить номер текстуры для использования во фрейм-буфере
+  // Выбрать номер GL-текстуры для использования во фрейм-буфере
   glActiveTexture(GL_TEXTURE0);      // default = GL_TEXTURE0
   glUseProgram(frame_program);
   glUniform1i(attr_buff_texture, 0); // GL_TEXTURE1 == 1
