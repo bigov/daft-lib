@@ -47,7 +47,7 @@ ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 SET (SRC_CODE main.cpp glad/glad.c)
 #file(GLOB SHADERS "*.glsl")
 #file(COPY ${SHADERS} DESTINATION ${CMAKE_BINARY_DIR})
-file(COPY "glsl" DESTINATION ${CMAKE_BINARY_DIR})
+#file(COPY "glsl" DESTINATION ${CMAKE_BINARY_DIR})
 
 # Библиотека GLFW
 find_package( PkgConfig REQUIRED )

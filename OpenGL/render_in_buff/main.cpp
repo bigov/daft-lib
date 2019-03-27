@@ -13,23 +13,27 @@
 static int win_w = 640, win_h = 480;
 
 static GLuint
-  frame_buff_id = 0,
-  vao_main = 0,
+  framebuff = 0,
+  vao_scene = 0,
   vao_frame = 0,
-  main_program = 0,
-  frame_program = 0,
-  attr_main_position = 0,
-  attr_main_color = 0,
-  attr_buff_position = 0,
-  attr_buff_texcoord = 0;
+  program_scene  = 0,
+  program_frame  = 0,
+  scene_position = 0,
+  scene_rgbcolor = 0,
+  frame_position = 0,
+  frame_texcoord = 0;
 
-static GLint attr_buff_texture = 0;
+static GLint
+  unif_texture = 0,
+  unif_xid = 0;
 
 static std::string
-  main_vert_glsl {"glsl/main_vert.glsl"},
-  main_frag_glsl {"glsl/main_frag.glsl"},
-  buff_vert_glsl {"glsl/buff_vert.glsl"},
-  buff_frag_glsl {"glsl/buff_frag.glsl"};
+  scene_vert_glsl {"../glsl/main_vert.glsl"},
+  scene_frag_glsl {"../glsl/main_frag.glsl"},
+  frame_vert_glsl {"../glsl/buff_vert.glsl"},
+  frame_frag_glsl {"../glsl/buff_frag.glsl"};
+
+struct pixel_info { unsigned int Xid = 0, Yid = 0, Zid = 0; };
 
 //## File read
 std::unique_ptr<char[]> read_file(const std::string &FNname)
@@ -54,6 +58,19 @@ std::unique_ptr<char[]> read_file(const std::string &FNname)
   data[data_size - 1] = '\0';
   return data;
 }
+
+
+pixel_info read_pixel(GLint x, GLint y)
+{
+  glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuff);
+  glReadBuffer(GL_COLOR_ATTACHMENT1);
+  pixel_info Pixel;
+  glReadPixels(x, y, 1, 1, GL_RGB_INTEGER, GL_UNSIGNED_INT, &Pixel);
+  glReadBuffer(GL_NONE);
+  glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+  return Pixel;
+}
+
 
 //## GLFW
 void key_callback (GLFWwindow* window, int, int, int, int)
@@ -177,135 +194,152 @@ GLuint create_program(const std::string& vert_shader, const std::string& frag_sh
 }
 
 
-//##
-void init_pogram_main()
+//## Программа рендера сцены
+void init_pogram_scene()
 {
-  main_program = create_program(main_vert_glsl, main_frag_glsl);
-  glUseProgram(main_program);
-  attr_main_position = gl_get_attrib(main_program, "VertexPosition");
-  attr_main_color = gl_get_attrib(main_program, "VertexColor");
+  program_scene = create_program(scene_vert_glsl, scene_frag_glsl);
+  glUseProgram(program_scene);
+  scene_position = gl_get_attrib(program_scene, "VertexPosition");
+  scene_rgbcolor = gl_get_attrib(program_scene, "VertexColor");
+  unif_xid = gl_get_uniform(program_scene, "Xid");
+  unsigned int x = 88888888;
+  glUniform1ui(unif_xid, x);
   glUseProgram(0);
 }
 
 
-//##
-void init_pogram_buff()
+//## Программа рендера фрейма с текстурой кадра сцены
+void init_pogram_frame()
 {
-  frame_program = create_program(buff_vert_glsl, buff_frag_glsl);
-  glUseProgram(frame_program);
-  attr_buff_position = gl_get_attrib(frame_program, "VertexPosition");
-  attr_buff_texcoord = gl_get_attrib(frame_program, "TextureCoord");
-  attr_buff_texture = gl_get_uniform(frame_program, "texFramebuffer");
+  program_frame = create_program(frame_vert_glsl, frame_frag_glsl);
+  glUseProgram(program_frame);
+  frame_position = gl_get_attrib(program_frame, "VertexPosition");
+  frame_texcoord = gl_get_attrib(program_frame, "TextureCoord");
+  unif_texture = gl_get_uniform(program_frame, "texFramebuffer");
   // GL-номер основной текстуры фрейм-буфера для рендера сцены
-  glUniform1i(attr_buff_texture, 0); // GL_TEXTURE0 -> 0
+  glUniform1i(unif_texture, 0); // GL_TEXTURE0 -> 0
   glUseProgram(0);
 }
 
-void init_scene_vao(void)
+//## Основной VAO - рендер простой сцены в виде плоского треугольника
+void init_vao_scene(void)
 {                           //  x      y     z     r     g     b
   float pos_and_color[18] = { -0.8f, -0.8f, 0.0f, 0.4f, 1.0f, 0.4f,
                                0.8f, -0.8f, 0.0f, 1.0f, 0.4f, 0.4f,
                                0.0f,  0.8f, 0.0f, 1.0f, 1.0f, 0.4f };
   GLsizei stride = 6 * sizeof(GLfloat);
-  GLsizei data_size = 3 * stride;
 
-  glGenVertexArrays(1, &vao_main);
-  glBindVertexArray(vao_main);
+  glGenVertexArrays(1, &vao_scene);
+  glBindVertexArray(vao_scene);
 
-  GLuint vboid = 0;
-  glGenBuffers(1, &vboid);
-  glBindBuffer(GL_ARRAY_BUFFER, vboid);
-  glBufferData(GL_ARRAY_BUFFER, data_size, pos_and_color, GL_STATIC_DRAW);
-  glEnableVertexAttribArray(attr_main_position);
-  glEnableVertexAttribArray(attr_main_color);
-  glVertexAttribPointer(attr_main_position, 3, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void*>(0*sizeof(GLfloat)));
-  glVertexAttribPointer(attr_main_color, 3, GL_FLOAT, GL_TRUE, stride, reinterpret_cast<void*>(3*sizeof(GLfloat)));
-  return;
+  GLuint vbo = 0;
+  glGenBuffers(1, &vbo);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(pos_and_color), pos_and_color, GL_STATIC_DRAW);
+  glEnableVertexAttribArray(scene_position);
+  glEnableVertexAttribArray(scene_rgbcolor);
+  glVertexAttribPointer(scene_position, 3, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void*>(0*sizeof(GLfloat)));
+  glVertexAttribPointer(scene_rgbcolor, 3, GL_FLOAT, GL_TRUE, stride, reinterpret_cast<void*>(3*sizeof(GLfloat)));
 }
 
-void init_frame_vao(void)
-{
-  GLfloat Position[8] = {-1.f,-1.f, 1.f,-1.f,-1.f, 1.f, 1.f, 1.f }; // 2D коорд. фрейма
-  GLfloat Texcoord[8] = { 0.f, 0.f, 1.f, 0.f, 0.f, 1.f, 1.f, 1.f }; // UV координаты
-
+//## VAO прямоугольника, заполняющего окно приложения.
+// На него натягивается текстура с кадром сцены.
+void init_vao_frame(void)
+{                        // x    y    U    V
+  GLfloat Position[16] = {-1.f,-1.f, 0.f, 0.f,
+                           1.f,-1.f, 1.f, 0.f,
+                          -1.f, 1.f, 0.f, 1.f,
+                           1.f, 1.f, 1.f, 1.f };
+  GLsizei stride = 4 * sizeof(GLfloat);
   glGenVertexArrays(1, &vao_frame);
   glBindVertexArray(vao_frame);
 
-  // Буфер координат вершин фрейма, заполняющего окно приложения
-  GLuint vbopos = 0;
-  glGenBuffers(1, &vbopos);
-  glBindBuffer(GL_ARRAY_BUFFER, vbopos);
+  GLuint vbo = 0;
+  glGenBuffers(1, &vbo);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo);
   glBufferData(GL_ARRAY_BUFFER, sizeof(Position), Position, GL_STATIC_DRAW);
-  glEnableVertexAttribArray(attr_buff_position);
-  glVertexAttribPointer(attr_buff_position, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
-
-  // Буфер UV координат текстуры, в которую рендерится сцена
-  GLuint vbotex = 0;
-  glGenBuffers(1, &vbotex);
-  glBindBuffer(GL_ARRAY_BUFFER, vbotex);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(Texcoord), Texcoord, GL_STATIC_DRAW);
-  glEnableVertexAttribArray(attr_buff_texcoord);
-  glVertexAttribPointer(attr_buff_texcoord, 2, GL_FLOAT, GL_FALSE, 0, nullptr);
+  glEnableVertexAttribArray(frame_position);
+  glEnableVertexAttribArray(frame_texcoord);
+  glVertexAttribPointer(frame_position, 2, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void*>(0*sizeof(GLfloat)));
+  glVertexAttribPointer(frame_texcoord, 2, GL_FLOAT, GL_FALSE, stride, reinterpret_cast<void*>(2*sizeof(GLfloat)));
 }
 
 bool init_framebuffer(GLsizei w, GLsizei h)
 {
   GLint lod = 0, frame = 0;
 
-  // Основная текстура, в которую рендерится сцена
+  // Основная текстура (рендер кадра сцены)
   glActiveTexture(GL_TEXTURE0);
   GLuint tex0 = 0;
   glGenTextures(1, &tex0);
   glBindTexture(GL_TEXTURE_2D, tex0);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
   glTexImage2D(GL_TEXTURE_2D, lod, GL_RGBA, w, h, frame, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
+  // Вспомогательная текстура (идентификация примитивов)
   glActiveTexture(GL_TEXTURE1);
   GLuint tex1 = 0;
   glGenTextures(1, &tex1);
   glBindTexture(GL_TEXTURE_2D, tex1);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32UI, w, h, 0, GL_RGB_INTEGER, GL_UNSIGNED_INT, nullptr);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexImage2D(GL_TEXTURE_2D, lod, GL_RGB32UI, w, h, frame, GL_RGB_INTEGER, GL_UNSIGNED_INT, nullptr);
 
-  glGenFramebuffers(1, &frame_buff_id);
-  glBindFramebuffer(GL_FRAMEBUFFER, frame_buff_id);
+  glBindTexture(GL_TEXTURE_2D, 0);
+
+  glGenFramebuffers(1, &framebuff);
+  glBindFramebuffer(GL_FRAMEBUFFER, framebuff);
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex0, 0);
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, tex1, 0);
 
   GLenum b[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
   glDrawBuffers(2, b);
 
-  GLuint rbufid = 0;
-  glGenRenderbuffers(1, &rbufid);
-  glBindRenderbuffer(GL_RENDERBUFFER, rbufid);
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbufid);
-  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w, h);
+  //// DEPTH & STENCIL в данном примере не используется - отключено.
+  //GLuint rbufid = 0;
+  //glGenRenderbuffers(1, &rbufid);
+  //glBindRenderbuffer(GL_RENDERBUFFER, rbufid);
+  //glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbufid);
+  //glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w, h);
 
+  if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) return false;
   return glGetError() == GL_NO_ERROR;
 }
 
 //## ---
 void show(GLFWwindow* win_ptr)
 {
+  GLint maxAttach = 0;
+  glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS, &maxAttach);
+  GLint maxDrawBuf = 0;
+  glGetIntegerv(GL_MAX_DRAW_BUFFERS, &maxDrawBuf);
+  std::cout << "GL_MAX_DRAW_BUFFERS: " << maxDrawBuf << "\n"
+            << "GL_MAX_COLOR_ATTACHMENTS: " << maxAttach << "\n\n";
+
   glClearColor(0.5f, 0.69f, 1.0f, 1.0f);
   glDisable(GL_DEPTH_TEST);
+  glViewport(0, 0, win_w, win_h);
 
-  init_pogram_main();
-  init_pogram_buff();
-  init_scene_vao();
-  init_frame_vao();
+  init_pogram_scene();
+  init_pogram_frame();
+  init_vao_scene();
+  init_vao_frame();
   if (!init_framebuffer(win_w, win_h)) ERR ("Can't init FrameBuffer");
 
-  glBindFramebuffer(GL_FRAMEBUFFER, frame_buff_id);
-  glBindVertexArray(vao_main);
-  glUseProgram(main_program);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glBindFramebuffer(GL_FRAMEBUFFER, framebuff);
+  glBindVertexArray(vao_scene);
+  glUseProgram(program_scene);
+  glClear(GL_COLOR_BUFFER_BIT);
   glDrawArrays(GL_TRIANGLES, 0, 3);
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glBindVertexArray(vao_frame);
-  glUseProgram(frame_program);
+  glUseProgram(program_frame);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+  auto Pixel = read_pixel(win_w/2, win_h/2);
+  std::cout << "Xid = " << Pixel.Xid << "\n";
 
   glfwSwapBuffers(win_ptr);
   while (!glfwWindowShouldClose(win_ptr))
@@ -320,6 +354,7 @@ void show(GLFWwindow* win_ptr)
 //## ---
 int main(int, char**)
 {
+  std::cout << "\n";
   try {
     show(glfw_win());
   } catch(std::exception & e) {
@@ -329,5 +364,6 @@ int main(int, char**)
     std::cout << "FAILURE: undefined exception.\n";
     return EXIT_FAILURE;
   }
+  std::cout << "\n\n";
   return EXIT_SUCCESS;
 }
