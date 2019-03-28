@@ -24,16 +24,13 @@ static GLuint
   frame_texcoord = 0;
 
 static GLint
-  unif_texture = 0,
-  unif_xid = 0;
+  unif_texture = 0;
 
 static std::string
   scene_vert_glsl {"../glsl/main_vert.glsl"},
   scene_frag_glsl {"../glsl/main_frag.glsl"},
   frame_vert_glsl {"../glsl/buff_vert.glsl"},
   frame_frag_glsl {"../glsl/buff_frag.glsl"};
-
-struct pixel_info { unsigned int Xid = 0, Yid = 0, Zid = 0; };
 
 //## File read
 std::unique_ptr<char[]> read_file(const std::string &FNname)
@@ -58,19 +55,6 @@ std::unique_ptr<char[]> read_file(const std::string &FNname)
   data[data_size - 1] = '\0';
   return data;
 }
-
-
-pixel_info read_pixel(GLint x, GLint y)
-{
-  glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuff);
-  glReadBuffer(GL_COLOR_ATTACHMENT1);
-  pixel_info Pixel;
-  glReadPixels(x, y, 1, 1, GL_RGB_INTEGER, GL_UNSIGNED_INT, &Pixel);
-  glReadBuffer(GL_NONE);
-  glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
-  return Pixel;
-}
-
 
 //## GLFW
 void key_callback (GLFWwindow* window, int, int, int, int)
@@ -105,7 +89,7 @@ GLFWwindow* glfw_win(void)
   return win_ptr;
 }
 
-//## OpenGL
+//## OpenGL program
 void compile_shader(GLuint shader)
 {
   glCompileShader(shader);
@@ -130,7 +114,7 @@ void compile_shader(GLuint shader)
 }
 
 
-//##
+//## OpenGL program
 GLuint gl_get_attrib(GLuint program, const std::string& attrib_name)
 {
   GLint n = glGetAttribLocation(program, attrib_name.c_str());
@@ -139,7 +123,7 @@ GLuint gl_get_attrib(GLuint program, const std::string& attrib_name)
 }
 
 
-//##
+//## OpenGL program
 GLint gl_get_uniform(GLuint program, const std::string& name )
 {
   GLint l = glGetUniformLocation(program, name.c_str());
@@ -148,7 +132,7 @@ GLint gl_get_uniform(GLuint program, const std::string& name )
 }
 
 
-//## OpenGL
+//## OpenGL program
 GLuint create_program(const std::string& vert_shader, const std::string& frag_shader)
 {
   GLuint program = 0;
@@ -201,9 +185,7 @@ void init_pogram_scene()
   glUseProgram(program_scene);
   scene_position = gl_get_attrib(program_scene, "VertexPosition");
   scene_rgbcolor = gl_get_attrib(program_scene, "VertexColor");
-  unif_xid = gl_get_uniform(program_scene, "Xid");
-  unsigned int x = 88888888;
-  glUniform1ui(unif_xid, x);
+  glUniform1ui(gl_get_uniform(program_scene, "Index"), 88888888);
   glUseProgram(0);
 }
 
@@ -284,7 +266,7 @@ bool init_framebuffer(GLsizei w, GLsizei h)
   glBindTexture(GL_TEXTURE_2D, tex1);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  glTexImage2D(GL_TEXTURE_2D, lod, GL_RGB32UI, w, h, frame, GL_RGB_INTEGER, GL_UNSIGNED_INT, nullptr);
+  glTexImage2D(GL_TEXTURE_2D, lod, GL_R32UI, w, h, frame, GL_RED_INTEGER, GL_UNSIGNED_INT, nullptr);
 
   glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -296,15 +278,20 @@ bool init_framebuffer(GLsizei w, GLsizei h)
   GLenum b[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
   glDrawBuffers(2, b);
 
-  //// DEPTH & STENCIL в данном примере не используется - отключено.
-  //GLuint rbufid = 0;
-  //glGenRenderbuffers(1, &rbufid);
-  //glBindRenderbuffer(GL_RENDERBUFFER, rbufid);
-  //glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbufid);
-  //glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, w, h);
-
   if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) return false;
   return glGetError() == GL_NO_ERROR;
+}
+
+//## Чтение пикселя из текстуры фреймбуфера
+void read_pixel(GLint x, GLint y)
+{
+  unsigned int P = 0;
+  glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuff);
+  glReadBuffer(GL_COLOR_ATTACHMENT1);
+  glReadPixels(x, y, 1, 1, GL_RED_INTEGER, GL_UNSIGNED_INT, &P);
+  glReadBuffer(GL_NONE);
+  glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+  std::printf("P = %u", P);
 }
 
 //## ---
@@ -337,9 +324,7 @@ void show(GLFWwindow* win_ptr)
   glBindVertexArray(vao_frame);
   glUseProgram(program_frame);
   glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-  auto Pixel = read_pixel(win_w/2, win_h/2);
-  std::cout << "Xid = " << Pixel.Xid << "\n";
+  read_pixel(win_w/2, win_h/2);
 
   glfwSwapBuffers(win_ptr);
   while (!glfwWindowShouldClose(win_ptr))

@@ -1,13 +1,13 @@
 #version 330
 
 in vec3 FrColor;
-uniform uint Xid;
+uniform uint Index;
 
 layout(location = 0) out vec3  OutColor;
-layout(location = 1) out uvec3 FragData;
+layout(location = 1) out uint  IdData;
 
 void main()
 {
   OutColor = FrColor;
-  FragData = uvec3(Xid, 0, 0);
+  IdData = Index;
 }
