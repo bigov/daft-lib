@@ -5,21 +5,21 @@
 
 OBJ    =gl_core_3_3.o glRenderer.o
 
-OS_NAME =$(shell uname)
+#OS_NAME =$(shell uname)
 
-ifneq (,$(findstring Linux,$(OS_NAME)))
-	APPNAME =app
-	APPCMD  =./app
-	STD     =-std=c++14
-	LDLIBS  =-lGL -lglfw -lm
-	CLEAR   =rm -frd
-else
-	APPNAME =app.exe
-	APPCMD  =app.exe
-	STD     =-std=c++14 --static
-	LDLIBS  =-lmingw32 -lopengl32 -lglfw3 -lgdi32
-	CLEAR   =DEL /Q /S
-endif
+#ifneq (,$(findstring Linux,$(OS_NAME)))
+#	APPNAME =app
+#	APPCMD  =./app
+#	STD     =-std=c++14
+#	LDLIBS  =-lGL -lglfw -lm
+#	CLEAR   =rm -frd
+#else
+APPNAME =app.exe
+APPCMD  =app.exe
+STD     =-std=c++14 --static
+LDLIBS  =-lmingw32 -lopengl32 -lglfw3 -lgdi32
+CLEAR   =DEL /Q /S
+#endif
 
 CPPFLAGS =$(STD)
 # -fexceptions -Werror -Woverloaded-virtual -Wctor-dtor-privacy\
