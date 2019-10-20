@@ -1,26 +1,45 @@
+//
+// Техника передачи исключения в главную функцию из потока при помощи
+// статической глобальной переменной типа std::exception_ptr
+//
+
 #include <iostream>
 #include <thread>
-#include <atomic>
-#include <mutex>
 
-std::mutex F;
+static std::exception_ptr globExceptionPtr = nullptr;
 
-void func_a(std::string& S)
+
+// call as thread
+//
+void func_a(void)
 {
-  //std::this_thread::sleep_for(std::chrono::milliseconds(20));
-  std::lock_guard<std::mutex> Hasp {F}; // блокировка с RAII
-  S += ", мой дорогой!\n";
+  try
+  {
+    //std::this_thread::sleep_for(std::chrono::microseconds(1));
+    throw std::runtime_error("ERR IN THE THREAD");
+  } catch(...)
+  {
+    globExceptionPtr = std::current_exception();
+  }
 }
 
+
+// Enter point
+//
 int main(int, char**)
 {
-  std::string Txt = "\nПривет";
-  std::thread T0(func_a, std::ref(Txt));
-  std::this_thread::sleep_for(std::chrono::microseconds(1000));
+  std::cout << "start...\n\n";
 
-  std::lock_guard<std::mutex> Hasp {F}; // блокировка с RAII
-  std::cout << Txt;
-  Hasp.~lock_guard();                   // ручная разблокировка
+  std::thread T0(func_a);
+  std::this_thread::sleep_for(std::chrono::milliseconds(2));
+
+  if(nullptr != globExceptionPtr) try
+  {
+    std::rethrow_exception(globExceptionPtr);
+  } catch (const std::exception& ex)
+  {
+    std::cout << "Перехвачено: " << ex.what() << '\n';
+  }
 
   if (T0.joinable())
   {
