@@ -5,7 +5,9 @@
 #define glfw_win_hpp
 
 #include "main.hpp"
-#include <GLFW/glfw3.h>
+
+extern GLFWwindow* MainWin;
+extern GLFWwindow* ThWin;
 
 void window_create(void);
 void window_update(void);

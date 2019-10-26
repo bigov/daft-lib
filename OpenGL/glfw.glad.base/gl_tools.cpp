@@ -1,8 +1,11 @@
 #include "gl_tools.hpp"
 
-GLuint hdl_VAO;
-GLuint pos_Buf;
-GLuint col_Buf;
+GLuint hdl_VAO = 0;
+GLuint pos_Buf = 0;
+GLuint col_Buf = 0;
+
+std::mutex mBuf;
+
 
 //----------------------------------------------------------------------------
 const GLchar * vert_shader_array[] = {"#version 430\n\
@@ -16,7 +19,9 @@ void main()                                        \n\
 {                                                  \n\
   FrColor  = VertexColor;                          \n\
   gl_Position = vec4(VertexPosition, 1.0);         \n\
-}"};//------------------------------------------------------------------------
+}"
+};//------------------------------------------------------------------------
+
 const GLchar * frag_shader_array[] = {"#version 430\n\
                                                    \n\
 in vec3 FrColor;                                   \n\
@@ -25,7 +30,8 @@ out vec3 Color;                                    \n\
 void main()                                        \n\
 {                                                  \n\
   Color = FrColor;                                 \n\
-}"};//------------------------------------------------------------------------
+}"
+};//------------------------------------------------------------------------
 
 //## компиялция шейдера с контролем результата
 void compile_shader(GLuint shader)
@@ -89,6 +95,32 @@ void gl_init_program(void)
   return;
 }
 
+
+///
+/// \brief gl_data_shake
+///
+void gl_data_shake(GLuint, GLuint VBO, GLFWwindow* Win)
+{
+  std::srand(static_cast<unsigned>(std::time(nullptr)));
+  glfwMakeContextCurrent(Win);
+  float r, g, b;
+
+  while (on_run)
+  {
+    std::this_thread::sleep_for(std::chrono::microseconds(999));
+    r = 2.f * static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+    g = 2.f * static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+    b = 2.f * static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+    float new_color[] = {r, g, b, g, b, r, b, r, g};
+
+    mBuf.try_lock();
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, 9*sizeof(float), new_color);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    mBuf.unlock();
+  }
+}
+
 //### Загрузка данных, установка начальных параметров
 void gl_init_scene(void)
 {
@@ -121,16 +153,16 @@ void gl_init_scene(void)
   glBufferData(GL_ARRAY_BUFFER, 9*sizeof(float), col_Data, GL_STATIC_DRAW);
   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
   glBindVertexArray(0);
-
-  return;
 }
 
 void gl_draw_arrays(void)
 {
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  mBuf.try_lock();
   glBindVertexArray(hdl_VAO);
   glDrawArrays(GL_TRIANGLES, 0, 3);
   glBindVertexArray(0);
+  mBuf.unlock();
   return;
 }
 

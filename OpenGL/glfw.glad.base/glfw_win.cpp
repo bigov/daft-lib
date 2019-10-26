@@ -1,6 +1,7 @@
 #include "glfw_win.hpp"
 
-GLFWwindow* pWin;
+GLFWwindow* MainWin = nullptr;
+GLFWwindow* ThWin = nullptr;
 
 int fps = 0;
 std::chrono::seconds t_1(1);
@@ -31,11 +32,19 @@ void window_create(void)
   glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
   glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
 
-  pWin = glfwCreateWindow(500, 400, "OpenGL learn", NULL, NULL);
-  if (nullptr == pWin) throw std::runtime_error("Creating Window fail.");
-  glfwMakeContextCurrent(pWin);
+  glfwWindowHint(GLFW_VISIBLE, false);
+  ThWin = glfwCreateWindow(1, 1, "", NULL, NULL);
+  if (nullptr == ThWin) throw std::runtime_error("Creating Window ThWin fail.");
+
+  glfwWindowHint(GLFW_VISIBLE, true);
+  MainWin = glfwCreateWindow(500, 400, "OpenGL learn", NULL, ThWin);
+  if (nullptr == MainWin) throw std::runtime_error("Creating Window pWin fail.");
+
+  glfwMakeContextCurrent(MainWin);
+  if(!gladLoadGL()) { ERR("FAILURE: can't load GLAD."); }
   glfwSwapInterval(0);
-  glfwSetKeyCallback(pWin, key_callback);
+  glfwSetKeyCallback(MainWin, key_callback);
+
   return;
 }
 
@@ -45,11 +54,11 @@ void window_update(void)
   fps++;
   if(std::chrono::system_clock::now() - t_start > t_1)
   {
-    glfwSetWindowTitle(pWin, std::to_string(fps).c_str());
+    glfwSetWindowTitle(MainWin, std::to_string(fps).c_str());
     t_start = std::chrono::system_clock::now();
     fps = 0;
   }
-  glfwSwapBuffers(pWin);
+  glfwSwapBuffers(MainWin);
   glfwPollEvents();
   return;
 }
@@ -57,12 +66,13 @@ void window_update(void)
 //### Очистка памяти
 void window_destroy(void)
 {
-  glfwDestroyWindow(pWin);
+  glfwDestroyWindow(MainWin);
+  glfwDestroyWindow(ThWin);
   return;
 }
 
 bool window_run(void)
 {
-  return !glfwWindowShouldClose(pWin);
+  return !glfwWindowShouldClose(MainWin);
 }
 
