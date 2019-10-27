@@ -8,13 +8,14 @@
 #ifndef __TOOLS_HPP__
 #define __TOOLS_HPP__
 
+#include <memory>
 #include <iostream>
 #include <fstream>
 #include <chrono>
 #include <vector>
 #include <unordered_map>
 
-#include "gl_core_3_3.h"
+#include "glcore33/gl_core33.h"
 #define GLM_FORCE_RADIANS
 #define GLM_ENABLE_EXPERIMENTAL
 #include <GLFW/glfw3.h>
@@ -24,8 +25,8 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <png.h>
-#include <ft2build.h>
-#include <freetype/freetype.h>
+//#include <ft2build.h>
+//#include <freetype/freetype.h>
 
 #include "io.hpp"
 

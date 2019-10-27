@@ -2,7 +2,7 @@
 //
 // file: main.cpp
 //
-// Пример использования функции OpenGL 3.3 core 
+// Пример использования геометрического шейдера
 //
 //----------------------------------------------------------------------------
 #include "tools.hpp"
@@ -19,7 +19,7 @@ void start_application(void)
     glBindTexture(GL_TEXTURE_2D, texture_id);
 
     // Загрузка текстуры
-    tr::pngImg texture = tr::get_png_img("tex0.png");
+    pngImg texture = get_png_img("../assets/tex0.png");
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texture.w, texture.h, 0, GL_RGBA,
       GL_UNSIGNED_BYTE, texture.d());
     glGenerateMipmap(GL_TEXTURE_2D);

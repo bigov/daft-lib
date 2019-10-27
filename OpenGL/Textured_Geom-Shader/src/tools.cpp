@@ -6,7 +6,7 @@
 // 
 //----------------------------------------------------------------------------
 #include "tools.hpp"
-#include "shaders.hpp"
+#include "io.hpp"
 
 GLFWwindow * pWin = nullptr;
 GLuint shaderProgram = 0;
@@ -15,13 +15,11 @@ GLuint shaderProgram = 0;
 void error_callback(int n, const char* descr)
 {
 	ERR(std::string("\n[GLFW] error "+std::to_string(n)+": "+descr+'\n'));
-	return;
 }
 
 //### GLFW обработчик клавиатуры
-void key_callback(GLFWwindow* window, int key, int sc, int ac, int md)
+void key_callback(GLFWwindow* window, int key, int, int ac, int)
 {
-	if (md != sc) md = sc; //!!!TODO!!! затычка
 	if (key == GLFW_KEY_ESCAPE && ac == GLFW_RELEASE)
 		glfwSetWindowShouldClose(window, true);
 	return;
@@ -50,22 +48,29 @@ void compile_shader(GLuint shader)
 	return;
 }
 
+
 //### Компиляция и запуск GLSL программы
 void init_program(void)
 {
-	GLuint vertShader = glCreateShader(GL_VERTEX_SHADER);
+  std::unique_ptr<char[]> glsl = read_chars_file("../assets/vert.glsl");
+  char* d = glsl.get();
+  GLuint vertShader = glCreateShader(GL_VERTEX_SHADER);
 	if (!vertShader) ERR("Error create GL_VERTEX_SHADER");
-	glShaderSource(vertShader, 1, &vert_shader, NULL);
+  glShaderSource(vertShader, 1, &d, NULL);
 	compile_shader(vertShader);
 
-	GLuint geomShader = glCreateShader(GL_GEOMETRY_SHADER);
+  glsl = read_chars_file("../assets/geom.glsl");
+  d = glsl.get();
+  GLuint geomShader = glCreateShader(GL_GEOMETRY_SHADER);
 	if (!geomShader) ERR("Error create GL_GEOMETRY_SHADER");
-	glShaderSource(geomShader, 1, &geom_shader, NULL);
+  glShaderSource(geomShader, 1, &d, NULL);
 	compile_shader(geomShader);
 
-	GLuint fragShader = glCreateShader(GL_FRAGMENT_SHADER);
+  glsl = read_chars_file("../assets/frag.glsl");
+  d = glsl.get();
+  GLuint fragShader = glCreateShader(GL_FRAGMENT_SHADER);
 	if (!fragShader) ERR("Error create GL_FRAGMENT_SHADER");
-	glShaderSource(fragShader, 1, &frag_shader, NULL);
+  glShaderSource(fragShader, 1, &d, NULL);
 	compile_shader(fragShader);
 
 	shaderProgram = glCreateProgram();
@@ -113,7 +118,6 @@ GLint get_uniform_location(const char * attr)
 	if (0 > posAttrib) ERR(std::string("Can't get uniform: " + attr_name));
 	return posAttrib;
 }
-
 
 //### Создание окна
 void init_opengl_content(void)
