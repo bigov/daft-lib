@@ -14,24 +14,24 @@ class EvInterface;
 // наследуемый класс клиента
 class EvClient
 {
-	public:
-		virtual ~EvClient(void);
-		virtual void pop(const EvInterface &);
+  public:
+    virtual ~EvClient(void);
+    virtual void pop(const EvInterface &);
 };
 
 // интерфейс обмена сообщениями
 class EvInterface
 {
-	private:
-		string message;
-		list<EvClient *> clients;
-		void anounce(void);
-	public:
-		EvInterface(void);
-		void subscribe(EvClient & ref);
-		void remove(EvClient & ref);
-		const string & get(void) const;
-		void push(string message);
+  private:
+    string message;
+    list<EvClient *> clients;
+    void anounce(void);
+  public:
+    EvInterface(void);
+    void subscribe(EvClient & ref);
+    void remove(EvClient & ref);
+    const string & get(void) const;
+    void push(string message);
 };
 
 #endif
