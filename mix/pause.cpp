@@ -1,4 +1,3 @@
-
 ////
 // При запуске консольной программы в среде MS-Windows из GUI возникает
 // ситуация, когда окно с выводом информации (об ошибке) закрывается раньше
@@ -7,11 +6,13 @@
 // В этой ситуации в пакетном файле используется команда "pause". В функции
 // вывода похожую паузу можно реализовать так:
 //
+#include <iostream>
+
 void cout_pause()
 {
-	std::cout << "\nFor close it press the \"Enter\" key ";
-	std::string n;
-	std::getline(std::cin, n);
-	return;
+  std::cout << "\nFor close it press the \"Enter\" key ";
+  std::string n;
+  std::getline(std::cin, n);
+  return;
 }
 

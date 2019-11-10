@@ -12,7 +12,7 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
 endif()
 
 project( render_in_buff )
-SET( EXEC_NAME "test" )
+SET( EXEC_NAME "bin-go" )
 include_directories("glad")
 
 SET( CMAKE_CXX_FLAGS "-m64 -std=c++17 -lpthread")
