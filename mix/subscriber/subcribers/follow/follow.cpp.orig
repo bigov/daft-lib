@@ -24,7 +24,7 @@ void EvClient::pop(const EvInterface &) {;}
 
 =======
 /**
- * шаблон проектирования "подписчик"
+ * шаблон проектирования "подписчик" DejaVu
  */
 #include "follow.hpp"
 
