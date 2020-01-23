@@ -11,8 +11,7 @@ class app_win: public Gtk::Window
 
   protected:
     Gtk::Box m_box { Gtk::ORIENTATION_VERTICAL };
-    Gtk::Label label { "Привет!\n" };
-    Gtk::Button m_Button1 {"OK"};
+    Gtk::Label label { "Выход: <Esc>" };
 
   private:
     bool on_key_press_event (GdkEventKey* event) override;
@@ -20,12 +19,9 @@ class app_win: public Gtk::Window
 
 app_win::app_win()
 {
-  set_border_width(10);
+  set_border_width(40);
   add(m_box);
-  m_box.set_border_width(10);
   m_box.add(label);
-  m_box.pack_end(m_Button1, Gtk::PACK_SHRINK);
-  m_Button1.signal_clicked().connect(sigc::mem_fun(*this, hide));
   show_all_children();
 }
 
