@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
     strcat(ErrStr, "New message");
     printf("ErrStr: %s\nErrLen: %i\n\n", ErrStr, strlen(ErrStr));
     if(NoErrors()) printf("No error messages\n");
-    
+
     float t = clock();
     fprintf(stdout, "job time: %f(sec)\n", t/CLOCKS_PER_SEC);
 
