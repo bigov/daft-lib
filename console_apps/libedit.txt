@@ -1,0 +1,6 @@
+
+https://www.thrysoee.dk/editline/
+
+https://github.com/cdesjardins/libedit
+http://www.s11n.net/editline/ (fork from http://sourceforge.net/projects/libedit)
+
