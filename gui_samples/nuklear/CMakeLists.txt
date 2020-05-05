@@ -10,15 +10,14 @@ SET( BIN "demo" )
 SET( CMAKE_BUILD_TYPE Debug )
 SET( SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE )
 
-include_directories("$(CMAKE_SOURCE_DIR)/../../../libs")
-
 SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64 -std=c++2a -Werror -Wall -Wextra \
   -Woverloaded-virtual -Winit-self -Wunreachable-code -Wpedantic" )
 
 find_package( PkgConfig REQUIRED )
 pkg_check_modules( GLFW REQUIRED glfw3 )
 
-add_subdirectory( "$(CMAKE_SOURCE_DIR)/../../../libs/glad" "glad" EXCLUDE_FROM_ALL )
+include_directories( "${CMAKE_SOURCE_DIR}" )
+add_subdirectory( "${CMAKE_SOURCE_DIR}/glad" "glad" EXCLUDE_FROM_ALL )
 SET( LIBS "${GLFW_LIBRARIES}" glad )
 
 if( ${CMAKE_SYSTEM_NAME} MATCHES "Windows" )
