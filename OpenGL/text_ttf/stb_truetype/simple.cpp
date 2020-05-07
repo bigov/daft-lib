@@ -4,6 +4,7 @@
 #include <linmath.h>
 #include <vector>
 #include <fstream>
+#include <memory>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb/stb_image_write.h>
@@ -26,7 +27,6 @@ static const struct
 };
 
 struct color { unsigned char r, g, b, a; };
-
 static const int attr_count = 4;
 
 static void error_callback(int, const char* description)
@@ -42,6 +42,29 @@ static void key_callback(GLFWwindow* window, int key, int, int action, int)
 
 inline int i_mul_fi(float f, int i) { return static_cast<int>(f * static_cast<float>(i)); }
 inline int i_mul_if(int i, float f) { return i_mul_fi(f, i); }
+
+
+void load_font(std::vector<unsigned char>& Buffer)
+{
+  // load font file
+  std::ifstream file ("../font/DejaVu Sans Mono for Powerline.ttf", std::ifstream::binary);
+  if (!file) fprintf(stderr, "error: not found font file");
+  file.seekg (0, file.end);    // get length of file
+  auto length = file.tellg();
+  file.seekg (0, file.beg);
+  std::vector<char> buffer(static_cast<size_t>(length), '\0');
+  file.read (buffer.data(),length); // read data as a block
+  if (!file) fprintf(stderr, "error: only %lld could be read", file.gcount());
+  file.close();
+  Buffer.resize(static_cast<size_t>(length), '\0');
+  memmove(Buffer.data(), buffer.data(), Buffer.size());
+}
+
+unsigned char* get_font_buffer(std::vector<unsigned char>& Buffer)
+{
+  if(Buffer.empty()) load_font(Buffer);
+  return Buffer.data();
+}
 
 
 int main(int, const char**)
@@ -78,44 +101,30 @@ int main(int, const char**)
     GLint tex_width = 400;
     GLint tex_height = 400;
 
-    /////////// - STB - BEGIN - /////////////
-
-    // load font file
-    std::ifstream is ("../font/DejaVu Sans Mono for Powerline.ttf", std::ifstream::binary);
-    if (!is) return -1;
-    is.seekg (0, is.end);    // get length of file
-    auto length = is.tellg();
-    is.seekg (0, is.beg);
-    std::vector<char> buffer(static_cast<size_t>(length), '\0');
-    is.read (buffer.data(),length); // read data as a block
-    if (!is) std::cout << "error: only " << is.gcount() << " could be read";
-    is.close();
-
-    std::vector<unsigned char>vBuffer(static_cast<size_t>(length), '\0');
-    memmove(vBuffer.data(), buffer.data(), vBuffer.size());
-    auto fontBuffer = vBuffer.data();
-
-    // prepare font
-    stbtt_fontinfo info;
-    if (!stbtt_InitFont(&info, fontBuffer, 0)) std::cout << "failed\n";
+    stbtt_fontinfo font_info {};
+    std::vector<unsigned char> FnBuffer {};
+    if (!stbtt_InitFont(&font_info, get_font_buffer(FnBuffer), 0)) fprintf(stderr, "failed\n");
 
     int b_w = tex_width; // bitmap width
     int b_h = tex_height; // bitmap height
     float l_h = 128.0f; // line height
 
+    int word[] = { 0x0416, 0x0418, 0x0412, 0x0423, '!' };
+    size_t w_len = sizeof(word)/sizeof(word[0]);
+
     // create a bitmap for the phrase
-    std::vector<unsigned char> bitmap( static_cast<size_t>(b_w * b_h) * sizeof(unsigned char) + 1, '\0' );
+    std::vector<unsigned char> bitmap( static_cast<size_t>(b_w * b_h), '\0' );
 
     // calculate font scaling
-    float scale = stbtt_ScaleForPixelHeight(&info, l_h);
+    float scale = stbtt_ScaleForPixelHeight(&font_info, l_h);
 
-    size_t w_len = 5;
-    int word[] = { 0x0416, 0x0418, 0x0412, 0x0423, '!' };
+    int left_dist = 50;  // отступ слева
+    int top_dist = 120;  // отступ сверху
 
-    int x = 0;
+    int x = left_dist;
 
     int ascent, descent, lineGap;
-    stbtt_GetFontVMetrics(&info, &ascent, &descent, &lineGap);
+    stbtt_GetFontVMetrics(&font_info, &ascent, &descent, &lineGap);
 
     ascent = static_cast<int>(static_cast<float>(ascent) * scale);
     descent = static_cast<int>(static_cast<float>(descent) * scale);
@@ -125,20 +134,20 @@ int main(int, const char**)
      // how wide is this character
      int ax;
      int lsb;
-     stbtt_GetCodepointHMetrics(&info, word[i], &ax, &lsb);
+     stbtt_GetCodepointHMetrics(&font_info, word[i], &ax, &lsb);
 
      /// get bounding box for character (may be offset to account for chars
      // that dip above or below the line
      int c_x1, c_y1, c_x2, c_y2;
-     stbtt_GetCodepointBitmapBox(&info, word[i], scale, scale, &c_x1,
+     stbtt_GetCodepointBitmapBox(&font_info, word[i], scale, scale, &c_x1,
          &c_y1, &c_x2, &c_y2);
 
      // compute y (different characters have different heights
-     int y = ascent + c_y1;
+     int y = top_dist + ascent + c_y1;
 
      // render character (stride and offset is important here)
      int byteOffset = x + i_mul_if(lsb, scale) + (y * b_w);
-     stbtt_MakeCodepointBitmap(&info, bitmap.data() + byteOffset,
+     stbtt_MakeCodepointBitmap(&font_info, bitmap.data() + byteOffset,
          c_x2 - c_x1, c_y2 - c_y1, b_w, scale, scale, word[i]);
 
      // advance x
@@ -146,36 +155,28 @@ int main(int, const char**)
 
      // add kerning
      int kern;
-     kern = stbtt_GetCodepointKernAdvance(&info, word[i], word[i + 1]);
+     kern = stbtt_GetCodepointKernAdvance(&font_info, word[i], word[i + 1]);
      x += i_mul_if(kern, scale);
     }
 
-    // save out a 1 channel image
-    stbi_write_png("out.png", b_w, b_h, 1, bitmap.data(), b_w);
-
-    size_t image_size = static_cast<size_t>(tex_width) * static_cast<size_t>(tex_height);
+    unsigned int image_size = static_cast<unsigned int>(tex_width * tex_height);
     std::vector<color> vImage(image_size, {255, 255, 255, 255});
-
-
-    //unsigned char b = 255;
-    for(size_t i = 0; i < image_size; ++i)
+    auto max = bitmap.size();
+    for(unsigned int i = 0; i < max; ++i)
     {
-      int n = bitmap[i];
+      auto n = bitmap[i];
       if(n > 0)
       {
-        n = 255 - n;
-        auto ch = static_cast<unsigned char>(n);
-        vImage[i].r = ch;
-        vImage[i].g = ch;
-        vImage[i].b = ch;
+        n = static_cast<unsigned char>(255 - n);
+        vImage[i].r = n;
+        vImage[i].g = n;
+        vImage[i].b = n;
       }
     }
 
     size_t texture_size = image_size * 4;
     std::vector<unsigned char> texture(texture_size, 255);
     memcpy(texture.data(), vImage.data(), texture_size);
-
-    /////////// - STB - FINAL - /////////////
 
     glGenBuffers(1, &vertex_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
