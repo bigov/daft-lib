@@ -30,12 +30,16 @@ SET( SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE )
 SET( CMAKE_VERBOSE_MAKEFILE OFF )
 
 # Настройка переменной пути к ${TP_LIBS}
-include( "../../deps/tplibs.cmake" )
+include( "../../../deps/tplibs.cmake" )
 
 SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Werror -Wall -Wextra \
   -Wpedantic -Woverloaded-virtual -Wctor-dtor-privacy -Wnon-virtual-dtor  \
   -Wconversion -Wsign-conversion -Winit-self -Wunreachable-code -Weffc++  \
   -Wold-style-cast" )
+
+if( ${CMAKE_SYSTEM_NAME} MATCHES "Windows" )
+  SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mwindows -Wl,-subsystem,windows" )
+endif()
 
 find_package( PkgConfig REQUIRED )
 

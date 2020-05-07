@@ -14,7 +14,7 @@
 то эти файлы игнорируются утилитой контроля версий "git". Пример настройки:
 
 --- filename: tplibs.cmake --->
-SET( TP_LIBS "D:/DevCpp/WORKSPACE/LIBS" )
+include_directories( SYSTEM "D:/dev_cpp/LIBS" )
 <--- /filename: tplibs.cmake---
 
 --- filename tplibs.vim --->
