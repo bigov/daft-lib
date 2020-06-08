@@ -38,90 +38,6 @@ void wft_face::set_pixel_size(FT_UInt w, FT_UInt h)
 
 
 ///
-/// \brief wft_face::set_pixel_size
-/// \param w
-/// \param h
-///
-void wft_face::select_size(FT_Int strike_index)
-{
-  FT_Error error = FT_Select_Size(FtFace, strike_index);
-  if(error) std::cerr << "FT_Select_Size(FtFace, strike_index) failed" << std::endl;
-}
-
-
-///
-/// \brief wft_face::get_glyph
-/// \param char_code
-/// \param mode
-/// \return
-///
-FT_BitmapGlyph wft_face::get_bitmap_glyph(const FT_ULong char_code, FT_Int32 mode )
-{
-  FT_Glyph glyph {};
-
-  //FT_Error error = FT_Load_Glyph(FtFace, index, FT_LOAD_NO_SCALE | FT_LOAD_NO_BITMAP);
-
-  // load char's glyph
-  FT_Error error = FT_Load_Char(FtFace, char_code, mode);
-  if( error ) std::cerr << "FT_Load_Char(FtFace, char_code, mode) failed" << std::endl;
-
-  // extract glyph image
-  error = FT_Get_Glyph( FtFace->glyph, &glyph );
-  if( error ) std::cerr << "FT_Get_Glyph( FtFace->glyph, &glyph ) failed" << std::endl;
-
-  // convert to a bitmap (default render mode + destroying old)
-  if ( glyph->format != FT_GLYPH_FORMAT_BITMAP )
-  {
-    error = FT_Glyph_To_Bitmap( &glyph, FT_RENDER_MODE_NORMAL, 0, 1 );
-    if( error ) std::cerr << "FT_Glyph_To_Bitmap( &glyph, FT_RENDER_MODE_NORMAL, 0, 1 ) failed" << std::endl;
-  }
-
-  auto glyph_bitmap = reinterpret_cast<FT_BitmapGlyph>(glyph); // access bitmap content by typecasting
-  FT_Done_Glyph( glyph );
-
-  return glyph_bitmap;
-}
-
-
-///
-/// \brief wft_face::glyph_to_bitmap
-/// \param wFtGlyph
-/// \return
-///
-FT_BitmapGlyph wft_face::glyph_to_bitmap(FT_Glyph& Glyph )
-{
-  if ( Glyph->format != FT_GLYPH_FORMAT_BITMAP )
-  {
-    FT_Error error = FT_Glyph_To_Bitmap( &Glyph, FT_RENDER_MODE_NORMAL, 0, 1 );
-    if( error ) std::cerr << std::endl << __PRETTY_FUNCTION__ << std::endl
-        << "FT_Glyph_To_Bitmap( &glyph, FT_RENDER_MODE_NORMAL, 0, 1 ) failed" << std::endl;
-  }
-  return reinterpret_cast<FT_BitmapGlyph>(Glyph);
-}
-
-
-///
-/// \brief wft_face::get_glyph
-/// \param charcode
-/// \return
-///
-FT_Glyph wft_face::get_glyph(uint32_t charcode, FT_Int32 load_flags)
-{
-  FT_Glyph TmpGlyph = {};
-
-  FT_Error error = FT_Load_Char(FtFace, charcode, load_flags);
-  if( error ) std::cerr << std::endl << __PRETTY_FUNCTION__ << std::endl
-                        << "FT_Load_Char failed" << std::endl;
-
-  error = FT_Get_Glyph(FtFace->glyph, &TmpGlyph );
-  if( error ) std::cerr << std::endl << __PRETTY_FUNCTION__ << std::endl
-                        << "FT_Get_Glyph(FtFace->glyph, &glyph) failed" << std::endl;
-
-  return TmpGlyph;
-}
-
-
-///
 /// \brief wft_face::get_kerning
 /// \param leftCharcode
 /// \param rightCharcode
@@ -141,80 +57,155 @@ FT_Pos wft_face::get_kerning(uint32_t char_first, uint32_t char_second, FT_UInt 
 }
 
 
-/*
 ///
-/// \brief wft_glyph::~wft_glyph
+/// \brief image::image
+/// \param Bitmap
 ///
-wft_glyph::~wft_glyph(void)
+image::image(const FT_Bitmap& Bitmap)
 {
-  if(FtGlyph != nullptr) FT_Done_Glyph(FtGlyph);
+  width = Bitmap.width;
+  rows = Bitmap.rows;
+  Bits.resize(width * rows, 0xFF);
+  memcpy(Bits.data(), Bitmap.buffer, Bits.size());
 }
 
+
 ///
-/// \brief ttf::Run
-/// \param symbol
+/// \brief paint_over
+/// \param Src
+/// \param Dst
+/// \param x
+/// \param y
+///
+void paint_over(const image& Src, image& Dst, unsigned int x, unsigned int y)
+{
+  if((Src.width + x  > Dst.width ) || (Src.rows + y > Dst.rows ))
+  {
+    std::cerr << std::endl << __PRETTY_FUNCTION__ << std::endl
+                            << "ERROR: (Src.width + x  > Dst.width ) || (Src.rows + y > Dst.rows )" << std::endl;
+    return;
+  }
+
+  unsigned int i = 0;                             // число скопированных пикселей
+  unsigned int i_max = Src.rows * Src.width;      // сумма пикселей источника, которые надо скопировать
+  unsigned int src_row_start = 0;                 // индекс в начале строки источника
+  unsigned int dst_row_start = x + y * Dst.width; // индекс начального пикселя приемника
+
+  while(i < i_max)
+  {
+    unsigned int row_n = Src.width;
+    unsigned int dst = dst_row_start;
+    unsigned int src = src_row_start;
+    while(row_n > 0)
+    {
+      Dst.Bits[dst] = Src.Bits[src];
+      dst += 1;
+      src += 1;
+      row_n -= 1;
+      i += 1;
+    }
+    src_row_start += Src.width; // переход на начало следующей строки источника
+    dst_row_start += Dst.width; // переход на начало следующей строки приемника
+  }
+}
+
+
+///
+/// \brief wft_face::get_symbol
+/// \param symbol_code
 /// \return
 ///
-letter wft_glyph::get_letter(const char *symbol)
+image wft_face::get_symbol(uint32_t symbol_code, image Result)
 {
-  letter L {};
-  L.ch = *symbol;
-  load_glyph(symbol);
-  if (!check_outline_exist()) throw std::runtime_error("Outline check failed.");
-  get_bbox(L);
-  return L;
+  FT_Error error = FT_Load_Char(FtFace, symbol_code, FT_LOAD_RENDER);
+  if( error )
+  {
+    std::cerr << std::endl << __PRETTY_FUNCTION__ << std::endl
+                        << "FT_Load_Char(FtFace, symbol_code, FT_LOAD_RENDER) failed" << std::endl;
+    return Result;
+  }
+  image Src {FtFace->glyph->bitmap};
+  if(Result.Bits.empty()) return Src;
+
+  auto _Re = Result;
+  Result.width += FtFace->glyph->bitmap.width;
+
+  if(Result.rows < FtFace->glyph->bitmap.rows)
+  {
+    Result.rows = FtFace->glyph->bitmap.rows;
+  }
+
+  if(Result.rows > FtFace->glyph->bitmap.rows)
+  {
+    //
+  }
+
+  Result.Bits.resize(Result.width * Result.rows, 0xFF );
+  paint_over(_Re, Result, 0, 0);
+  paint_over(Src, Result, _Re.width, 0);
+  return Result;
 }
 
 
 ///
-/// \brief ttf::load_glyph
-/// \param symbol
-///
-void wft_glyph::load_glyph(const char *symbol) const
-{
-  FT_ULong code = static_cast<FT_ULong>(symbol[0]);
-
-  // For simplicity, use the charmap FreeType provides by default;
-  // in most cases this means Unicode.
-  FT_UInt index = FT_Get_Char_Index(wFtFace, code);
-
-  FT_Error error = FT_Load_Glyph(wFtFace, index, FT_LOAD_NO_SCALE | FT_LOAD_NO_BITMAP);
-  if (error) std::cerr << "FT_Load_Glyph() failed" << std::endl;
-}
-
-
-///
-/// \brief ttf::check_outline_exist
+/// \brief wft_face::get_symbols_row
+/// \param TextUnicode
 /// \return
 ///
-bool wft_glyph::check_outline_exist() const
+image wft_face::get_symbols_row(const std::vector<uint32_t>& TextUnicode)
 {
-  FT_Face face = wFtFace;
-  FT_GlyphSlot slot = face->glyph;
-  FT_Outline &outline = slot->outline;
-  if (slot->format != FT_GLYPH_FORMAT_OUTLINE) return false;          // Should never happen.  Just an extra check.
-  if (outline.n_contours <= 0 || outline.n_points <= 0) return false; // Can happen for some font files.
-  FT_Error error = FT_Outline_Check(&outline);
-  return (false == error);
-}
+  image Result {};
 
+  for(auto symbol: TextUnicode)
+  {
+    Result = get_symbol(symbol, Result);
+  }
 
-///
-/// \brief ttf::get_bbox
-///
-void wft_glyph::get_bbox(letter& Ch)
-{
-  FT_Face face = wFtFace;
-  FT_GlyphSlot slot = face->glyph;
-  FT_Outline &outline = slot->outline;
-  FT_BBox boundingBox;
-  FT_Outline_Get_BBox(&outline, &boundingBox);
+  /*
+  int32_t top = 0;
+  uint32_t bottom = 0;
+  uint32_t prev_char = 0;
 
-  Ch.xMin = boundingBox.xMin;
-  Ch.yMin = boundingBox.yMin;
-  Ch.width = boundingBox.xMax - Ch.xMin;
-  Ch.height = boundingBox.yMax - Ch.yMin;
-}
+  FT_Pos posX = 0; // Позиция текущего символа в формате FT_Pos - "26.6"
+  for (auto symbol_code: TextUnicode)
+  {
+    FT_Error error = FT_Load_Char(FtFace, symbol_code, FT_LOAD_RENDER);
+    if( error ) std::cerr << std::endl << __PRETTY_FUNCTION__ << std::endl
+                          << "FT_Load_Char(FtFace, symbol_code, FT_LOAD_RENDER) failed" << std::endl;
+
+      posX += FontFace.get_kerning(prev_char, charcode);
+      prev_char = charcode;
+      Symbol.x = (posX >> 6) + Symbol.BitmapGlyph->left;
+      Symbol.y = -Symbol.BitmapGlyph->top;
+
+      // glyph->advance имеет формат 16.16, поэтому для приведения
+      // его к формату 26.6 необходимо сдвинуть число на 10 бит враво
+      posX += Symbol.Glyph->advance.x >> 10;
+
+      // Вычисляем самую верхнюю позицию
+      top = std::min(top, Symbol.y);
+
+      // Вычисляем самую нижнюю позицию
+      bottom = std::max(bottom, (Symbol.y + Symbol.BitmapGlyph->bitmap.rows));
+  }
+  const int32_t imageW = posX >> 6 ;
+  const int32_t imageH = bottom - top;                // Высота строки (изображения)
+
+  std::vector<uint8_t> image(imageW * imageH, 0x00);  // буфер для сохранения данных
+  for (const symbol_info& Symbol: Text)
+  {
+    for (uint32_t srcY = 0; srcY < Symbol.BitmapGlyph->bitmap.rows; ++srcY)
+    {
+      for (uint32_t srcX = 0; srcX < Symbol.BitmapGlyph->bitmap.width; ++srcX)
+      {
+        image[Symbol.x + srcX + (Symbol.y + srcY - top) * imageW] =
+            Symbol.BitmapGlyph->bitmap.buffer[srcX + srcY * Symbol.BitmapGlyph->bitmap.pitch];
+      }
+    }
+  }
 */
+
+  return Result;
+}
 
 } // namespace tr

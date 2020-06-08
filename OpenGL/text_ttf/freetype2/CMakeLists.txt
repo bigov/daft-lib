@@ -39,7 +39,7 @@ SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Werror -Wall -Wextra \
 #" -Wold-style-cast" )
 
 if( ${CMAKE_SYSTEM_NAME} MATCHES "Windows" )
-#  SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mwindows -Wl,-subsystem,windows" )
+  SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mwindows -Wl,-subsystem,windows" )
 endif()
 
 find_package( PkgConfig REQUIRED )
@@ -58,6 +58,6 @@ endif()
 pkg_check_modules( GLFW REQUIRED glfw3 )
 add_subdirectory( "${TP_LIBS}/glad" "glad" EXCLUDE_FROM_ALL )
 
-add_executable( simple "simple.cpp" "wft2.cpp" "win.cpp" )
-target_link_libraries( simple "${TR_LIBS}" "${GLFW_LIBRARIES}" "${PNG_LIBRARIES}"  "${FREETYPE2_LIBRARIES}" glad )
+add_executable( ttf-show "main.cpp" "wft2.cpp" "win.cpp" )
+target_link_libraries( ttf-show "${TR_LIBS}" "${GLFW_LIBRARIES}" "${PNG_LIBRARIES}"  "${FREETYPE2_LIBRARIES}" glad )
 
