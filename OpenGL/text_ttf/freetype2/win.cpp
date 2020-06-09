@@ -1,3 +1,4 @@
+#include <cstring>
 #include <linmath.h>
 #include <png.h>
 

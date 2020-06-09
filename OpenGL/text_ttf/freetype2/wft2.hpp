@@ -18,13 +18,16 @@
 
 namespace tr {
 
-struct image {
-    image(void) {};
-    image(const FT_Bitmap& Bitmap);
+struct symbol {
+    symbol(void) {};
+    symbol(const FT_GlyphSlot& Slot);
 
     std::vector<unsigned char> Bits {};
-    unsigned int rows = 0;
     unsigned int width = 0;
+    unsigned int height = 0;
+    int left = 0;
+    int top = 0;
+    int hor_bear_y = 0;
 };
 
 
@@ -59,7 +62,7 @@ class wft_face
     wft_lib wFtLib {};
     FT_Face FtFace {};
 
-    void get_bbox(image& Image);
+    void get_bbox(symbol& Image);
 
   public:
     wft_face(const char *filename, int face_index = 0);
@@ -68,8 +71,8 @@ class wft_face
 
     void set_pixel_size(FT_UInt w, FT_UInt h);
     FT_Pos get_kerning(uint32_t char_first, uint32_t char_second, FT_UInt kern_mode = FT_KERNING_DEFAULT);
-    image get_symbol(uint32_t symbol_code, image Result = {});
-    image get_symbols_row(const std::vector<uint32_t>& TextUnicode);
+    symbol get_symbol(uint32_t symbol_code);
+    symbol get_symbols_row(const std::vector<uint32_t>& TextUnicode);
 };
 
 

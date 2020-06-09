@@ -22,12 +22,12 @@ int main(int, char**)
   tr::wft_face FontFace {"../font/DejaVu Sans Mono for Powerline.ttf"};
   FontFace.set_pixel_size(0, 48);
 
-  tr::image ImG = FontFace.get_symbol(L'Й');
-  //tr::image ImG = FontFace.get_symbols_row({L'.', L'В'}); //, L'а', L'с', L'я', L'!'});
+  //tr::image ImG = FontFace.get_symbol(L'Й');
+  tr::symbol ImG = FontFace.get_symbols_row({L'c', L'Ж', L'ц', L'Й'}); //, L'а', L'с', L'я', L'!'});
 
   size_t border = 20;
   size_t i = 0;                        // число скопированных пикселей
-  size_t i_max = ImG.width * ImG.rows; // число пикселей источника
+  size_t i_max = ImG.width * ImG.height; // число пикселей источника
   size_t src_start = 0;
   size_t dst_start = bytes_per_pixel * (border + border * win_width);
   std::vector<unsigned char> texture(image_size * bytes_per_pixel, 0xFF);
@@ -54,7 +54,7 @@ int main(int, char**)
   }
 
   // Сохраняем изображение в PNG формате с прозрачностью
-  savePNG(ImG.Bits.data(), ImG.width, ImG.rows);
+  savePNG(ImG.Bits.data(), ImG.width, ImG.height);
   opengl_window_show(texture.data(), win_width, win_height);
   exit(EXIT_SUCCESS);
 }
