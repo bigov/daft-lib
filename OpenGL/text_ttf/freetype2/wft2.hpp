@@ -18,16 +18,16 @@
 
 namespace tr {
 
-struct symbol {
-    symbol(void) {};
-    symbol(const FT_GlyphSlot& Slot);
+struct mask_bits {
+    mask_bits(void) {};
+    mask_bits(const FT_Face& F);
 
     std::vector<unsigned char> Bits {};
-    unsigned int width = 0;
-    unsigned int height = 0;
-    int left = 0;
+    uint32_t symbol_uncode = 0;
     int top = 0;
-    int hor_bear_y = 0;
+    int left = 0;
+    int width  = 0;
+    int height = 0;
 };
 
 
@@ -62,7 +62,7 @@ class wft_face
     wft_lib wFtLib {};
     FT_Face FtFace {};
 
-    void get_bbox(symbol& Image);
+    void get_bbox(mask_bits& Image);
 
   public:
     wft_face(const char *filename, int face_index = 0);
@@ -70,9 +70,9 @@ class wft_face
     operator FT_Face() const { return FtFace; }
 
     void set_pixel_size(FT_UInt w, FT_UInt h);
-    FT_Pos get_kerning(uint32_t char_first, uint32_t char_second, FT_UInt kern_mode = FT_KERNING_DEFAULT);
-    symbol get_symbol(uint32_t symbol_code);
-    symbol get_symbols_row(const std::vector<uint32_t>& TextUnicode);
+    int get_kerning(uint32_t char_first, uint32_t char_second, FT_UInt kern_mode = FT_KERNING_DEFAULT);
+    mask_bits get_symbol(uint32_t symbol_code);
+    mask_bits make_bitmap_text(const std::string& Text);
 };
 
 

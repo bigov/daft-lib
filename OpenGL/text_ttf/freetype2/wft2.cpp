@@ -4,6 +4,37 @@ namespace tr {
 
 
 ///
+/// \brief string2unicode
+/// \param Text
+/// \return Unicode vector
+///
+std::vector<uint32_t> string2unicode(const std::string& Text)
+{
+  std::vector<uint32_t> Result {};
+  for(size_t i = 0; i < Text.size();)
+  {
+    unsigned int a=Text[i++];
+    //if((a&0x80)==0);
+    if((a&0xE0)==0xC0){
+      a=(a&0x1F)<<6;
+      a|=Text[i++]&0x3F;
+    }else if((a&0xF0)==0xE0){
+      a=(a&0xF)<<12;
+      a|=(Text[i++]&0x3F)<<6;
+      a|=Text[i++]&0x3F;
+    }else if((a&0xF8)==0xF0){
+      a=(a&0x7)<<18;
+      a|=(a&0x3F)<<12;
+      a|=(Text[i++]&0x3F)<<6;
+      a|=Text[i++]&0x3F;
+    }
+    Result.push_back(a);
+  }
+  return Result;
+}
+
+
+///
 /// \brief wft::wft
 ///
 wft_lib::wft_lib(void)
@@ -41,9 +72,9 @@ void wft_face::set_pixel_size(FT_UInt w, FT_UInt h)
 /// \brief wft_face::get_kerning
 /// \param leftCharcode
 /// \param rightCharcode
-/// \return Кернинг двух символов в формате 26.6
+/// \return Кернинг двух символов
 ///
-FT_Pos wft_face::get_kerning(uint32_t char_first, uint32_t char_second, FT_UInt kern_mode)
+int wft_face::get_kerning(uint32_t char_first, uint32_t char_second, FT_UInt kern_mode)
 {
   if(char_first == 0) return 0;
   FT_UInt IndexFirst = FT_Get_Char_Index(FtFace, char_first);
@@ -53,7 +84,7 @@ FT_Pos wft_face::get_kerning(uint32_t char_first, uint32_t char_second, FT_UInt 
   if( error ) std::cerr << std::endl << __PRETTY_FUNCTION__ << std::endl
                         << "FT_Get_Kerning(FtFace, IndexFirst, IndexSecond, FT_KERNING_DEFAULT, &delta) failed"
                         << std::endl;
-  return delta.x;
+  return delta.x >> 6; // x  в формате 26.6, поэтому сдвигаем результат
 }
 
 
@@ -61,15 +92,15 @@ FT_Pos wft_face::get_kerning(uint32_t char_first, uint32_t char_second, FT_UInt 
 /// \brief image::image
 /// \param Bitmap
 ///
-symbol::symbol(const FT_GlyphSlot& Slot)
+mask_bits::mask_bits(const FT_Face& F)
 {
-  left = Slot->bitmap_left;
-  top = Slot->bitmap_top;
-  width = Slot->bitmap.width;
-  height = Slot->bitmap.rows;
-  hor_bear_y = Slot->metrics.horiBearingY;
+  width = F->glyph->bitmap.width;
+  height = F->glyph->bitmap.rows;
+  top = F->glyph->bitmap_top;
+  left = F->glyph->bitmap_left;
+
   Bits.resize(width * height, 0xFF);
-  memcpy(Bits.data(), Slot->bitmap.buffer, Bits.size());
+  memcpy(Bits.data(), F->glyph->bitmap.buffer, Bits.size());
 }
 
 
@@ -80,7 +111,7 @@ symbol::symbol(const FT_GlyphSlot& Slot)
 /// \param x
 /// \param y
 ///
-void paint_over(const symbol& Src, symbol& Dst, unsigned int x, unsigned int y)
+void paint_over(const mask_bits& Src, mask_bits& Dst, int x, int y)
 {
   if((Src.width + x  > Dst.width ) || (Src.height + y > Dst.height ))
   {
@@ -90,7 +121,7 @@ void paint_over(const symbol& Src, symbol& Dst, unsigned int x, unsigned int y)
   }
 
   unsigned int i = 0;                             // число скопированных пикселей
-  unsigned int i_max = Src.height * Src.width;      // сумма пикселей источника, которые надо скопировать
+  unsigned int i_max = Src.height * Src.width;    // сумма пикселей источника, которые надо скопировать
   unsigned int src_row_start = 0;                 // индекс в начале строки источника
   unsigned int dst_row_start = x + y * Dst.width; // индекс начального пикселя приемника
 
@@ -118,7 +149,7 @@ void paint_over(const symbol& Src, symbol& Dst, unsigned int x, unsigned int y)
 /// \param symbol_code
 /// \return
 ///
-symbol wft_face::get_symbol(uint32_t symbol_code)
+mask_bits wft_face::get_symbol(uint32_t symbol_code)
 {
   FT_Error error = FT_Load_Char(FtFace, symbol_code, FT_LOAD_RENDER);
 
@@ -126,10 +157,12 @@ symbol wft_face::get_symbol(uint32_t symbol_code)
   {
     std::cerr << std::endl << __PRETTY_FUNCTION__ << std::endl
                         << "FT_Load_Char(FtFace, symbol_code, FT_LOAD_RENDER) failed" << std::endl;
-    return symbol {};
+    return mask_bits {};
   }
+  mask_bits Result {FtFace};
+  Result.symbol_uncode = symbol_code;
 
-  return symbol {FtFace->glyph};
+  return Result;
 }
 
 
@@ -138,71 +171,49 @@ symbol wft_face::get_symbol(uint32_t symbol_code)
 /// \param TextUnicode
 /// \return
 ///
-symbol wft_face::get_symbols_row(const std::vector<uint32_t>& TextUnicode)
+mask_bits wft_face::make_bitmap_text(const std::string& Text)
 {
-  symbol Result {};
-  std::vector<symbol> TmpArray {};
+  std::vector<uint32_t> TextUnicode = string2unicode(Text);
+  mask_bits Result {};
+  std::vector<mask_bits> TmpArray {};
 
   for(auto s: TextUnicode)
   {
-    auto TS = get_symbol(s);
+    TmpArray.push_back(get_symbol(s));
 
-    Result.height = std::max(Result.height, TS.height - TS.hor_bear_y + TS.height);
-    Result.width += TS.width + TS.left;
-    TmpArray.push_back(TS);
-  }
 
-  Result.Bits.resize(Result.width * Result.height, 0x88);
+    Result.height = std::max(Result.height, TmpArray.back().height);
+    Result.width += TmpArray.back().width + TmpArray.back().left;
 
-  int x = 0;
-  for(auto& Symbol: TmpArray)
-  {
-    paint_over(Symbol, Result, x + Symbol.left, 0);
-    x += Symbol.width;
-  }
-  /*
-  int32_t top = 0;
-  uint32_t bottom = 0;
-  uint32_t prev_char = 0;
-
-  FT_Pos posX = 0; // Позиция текущего символа в формате FT_Pos - "26.6"
-  for (auto symbol_code: TextUnicode)
-  {
-    FT_Error error = FT_Load_Char(FtFace, symbol_code, FT_LOAD_RENDER);
-    if( error ) std::cerr << std::endl << __PRETTY_FUNCTION__ << std::endl
-                          << "FT_Load_Char(FtFace, symbol_code, FT_LOAD_RENDER) failed" << std::endl;
-
-      posX += FontFace.get_kerning(prev_char, charcode);
-      prev_char = charcode;
-      Symbol.x = (posX >> 6) + Symbol.BitmapGlyph->left;
-      Symbol.y = -Symbol.BitmapGlyph->top;
-
-      // glyph->advance имеет формат 16.16, поэтому для приведения
-      // его к формату 26.6 необходимо сдвинуть число на 10 бит враво
-      posX += Symbol.Glyph->advance.x >> 10;
-
-      // Вычисляем самую верхнюю позицию
-      top = std::min(top, Symbol.y);
-
-      // Вычисляем самую нижнюю позицию
-      bottom = std::max(bottom, (Symbol.y + Symbol.BitmapGlyph->bitmap.rows));
-  }
-  const int32_t imageW = posX >> 6 ;
-  const int32_t imageH = bottom - top;                // Высота строки (изображения)
-
-  std::vector<uint8_t> image(imageW * imageH, 0x00);  // буфер для сохранения данных
-  for (const symbol_info& Symbol: Text)
-  {
-    for (uint32_t srcY = 0; srcY < Symbol.BitmapGlyph->bitmap.rows; ++srcY)
+    auto ts = TmpArray.size();
+    if(ts > 1)
     {
-      for (uint32_t srcX = 0; srcX < Symbol.BitmapGlyph->bitmap.width; ++srcX)
+      Result.width += get_kerning(TmpArray[ts - 2].symbol_uncode, TmpArray[ts - 1].symbol_uncode);
+
+      // Обработка пробелов
+      if(TmpArray[ts - 2].width == 0)
       {
-        image[Symbol.x + srcX + (Symbol.y + srcY - top) * imageW] =
-            Symbol.BitmapGlyph->bitmap.buffer[srcX + srcY * Symbol.BitmapGlyph->bitmap.pitch];
+        TmpArray.back().left += TmpArray.back().width;
+        Result.width += TmpArray.back().left;
       }
     }
+
+    // Здесь назначение .top меняется - тут это максимальное смещение нижней границы
+    Result.top = std::max(Result.top, TmpArray.back().height - TmpArray.back().top);
   }
-*/
+
+  Result.height += Result.top;
+
+  Result.Bits.resize(Result.width * Result.height, 0x00);
+
+  int x = 0;
+  uint32_t prev_symbol_unicode = 0;
+  for(auto& M: TmpArray)
+  {
+    x += M.left + get_kerning(prev_symbol_unicode, M.symbol_uncode);
+    paint_over(M, Result, x, Result.height - M.top - Result.top);
+    x += M.width;
+  }
 
   return Result;
 }
