@@ -19,8 +19,9 @@ int main(int, char**)
   size_t bytes_per_pixel = 4;
   auto image_size = static_cast<size_t>(win_width * win_height);
 
-  tr::wft_face FontFace {"../font/DejaVu Sans Mono for Powerline.ttf"};
-  FontFace.set_pixel_size(0, 12);
+//  tr::wft_face FontFace {"../font/DejaVu Sans Mono for Powerline.ttf"};
+  tr::wft_face FontFace {"../font/LiberationSans-Regular.ttf"};
+  FontFace.set_pixel_size(0, 15);
 
   auto Bitmap = FontFace.make_bitmap_text("Привет вам, друзья!");
 
